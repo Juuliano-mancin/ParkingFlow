@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Estacionamento Inteligente')</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-pQdfkl+3rMkp6e8t+OpQJj6M0e4e0DdZVY1r8p6+Y5J9Q0lD0Fv1cVdF+yK0JYF1" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 
@@ -15,6 +15,12 @@
     <header class="bg-light py-3 mb-4">
         <div class="container">
             <h1 class="h3">Estacionamento Inteligente</h1>
+            
+            <!-- Botão temporario de voltar para a dashboard, exceto na própria dashboard -->
+            @if (!Request::is('dashboard'))
+            <div class="container mt-3"> <a href="{{ route('dashboard') }}" class="btn btn-dark"> &larr; Voltar para a Dashboard</a></div>
+            @endif
+
         </div>
     </header>
 
