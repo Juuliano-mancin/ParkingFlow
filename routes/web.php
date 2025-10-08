@@ -25,4 +25,5 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
         Route::get('/estacionamentos/novo', [EstacionamentoController::class, 'create'])->name('estacionamentos.create'); /* Rota GET para formulário para criar um novo estacionamento, nomeada como 'estacionamentos.create' */
         Route::post('/estacionamentos', [EstacionamentoController::class, 'store'])->name('estacionamentos.store'); /* Rota POST para salvar um novo estacionamento, nomeada*/
         Route::get('/setores/novo/{idProjeto}', [SetorController::class, 'create'])->name('setores.create'); /* Rota GET para formulário para criar um novo setor, nomeada como 'setores.create' */
+        Route::post('/setores', [SetorController::class, 'store'])->name('setores.store'); /* Rota POST para salvar um novo setor, nomeada como 'setores.store' */
     });    
