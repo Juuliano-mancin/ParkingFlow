@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController; /* Importa o LoginController para ser usado nas rotas */
 use App\Http\Controllers\ClienteController; /* Importa o ClienteController para ser usado nas rotas */
+use App\Http\Controllers\EstacionamentoController; /* Importa o EstacionamentoController para ser usado nas rotas */
+use App\Http\Controllers\SetorController; /* Importa o SetorController para ser usado nas rotas */
 
 Route::get('/', [LoginController::class, 'showLoginForm'])->name('login'); /* Rota GET para exibir o formulário de login */
 Route::post('/login', [LoginController::class, 'login'])->name('login.post'); /* Rota POST para processar o login */
@@ -20,4 +22,7 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
         Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update'); /* Rota PUT para atualizar um cliente, nomeada como 'clientes.update' */
         Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy'); /* Rota DELETE para excluir um cliente, nomeada como 'clientes.destroy'*/
         Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index'); /* Rota GET para listar todos os clientes, nomeada como 'clientes.index' */
+        Route::get('/estacionamentos/novo', [EstacionamentoController::class, 'create'])->name('estacionamentos.create'); /* Rota GET para formulário para criar um novo estacionamento, nomeada como 'estacionamentos.create' */
+        Route::post('/estacionamentos', [EstacionamentoController::class, 'store'])->name('estacionamentos.store'); /* Rota POST para salvar um novo estacionamento, nomeada*/
+        Route::get('/setores/novo/{idProjeto}', [SetorController::class, 'create'])->name('setores.create'); /* Rota GET para formulário para criar um novo setor, nomeada como 'setores.create' */
     });    
