@@ -36,10 +36,6 @@
             <button type="submit" class="btn btn-primary">Salvar e Continuar</button>
         </form>
     </div>
-
-    <div class="mt-4">
-        <a href="{{ route('dashboard') }}" class="btn btn-secondary">Voltar para Dashboard</a>
-    </div>
 </div>
 
 <!-- Script opcional: mostrar campos adicionais se necessário -->

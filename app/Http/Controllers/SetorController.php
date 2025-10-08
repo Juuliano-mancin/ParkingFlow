@@ -12,8 +12,16 @@ class SetorController extends Controller
     public function create($idProjeto)
         {
             $projeto = Projeto::findOrFail($idProjeto);
-            return view('novoSetor', compact('projeto'));
+
+            // Garante que o caminho esteja no formato correto para a view
+            $caminhoPublico = 'storage/' . ltrim($projeto->caminhoPlantaEstacionamento, '/');
+
+            return view('novoSetor', [
+                'projeto' => $projeto,
+                'caminhoPublico' => $caminhoPublico,
+            ]);
         }
+
 
     public function store(Request $request)
         {
