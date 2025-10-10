@@ -5,44 +5,53 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Setor;
 use App\Models\Projeto;
+use Illuminate\Support\Facades\DB;
 
 class SetorController extends Controller
 {
-
     public function create($idProjeto)
-        {
-            $projeto = Projeto::findOrFail($idProjeto);
+    {
+        $projeto = Projeto::findOrFail($idProjeto);
 
-            // Garante que o caminho esteja no formato correto para a view
-            $caminhoPublico = 'storage/' . ltrim($projeto->caminhoPlantaEstacionamento, '/');
+        // Garante que o caminho da planta esteja correto
+        $caminhoPublico = 'storage/' . ltrim($projeto->caminhoPlantaEstacionamento, '/');
 
-            return view('novoSetor', [
-                'projeto' => $projeto,
-                'caminhoPublico' => $caminhoPublico,
-            ]);
-        }
-
+        return view('novoSetor', [
+            'projeto' => $projeto,
+            'caminhoPublico' => $caminhoPublico,
+        ]);
+    }
 
     public function store(Request $request)
-        {
-            $request->validate
-                ([
-                    'idProjeto' => 'required|exists:tb_projetos,idProjeto',
-                    'nomeSetor' => 'required|string|max:255',
-                    'corSetor' => 'required|string|max:7', // Ex: #FF0000
-                    'setorCoordenadaX' => 'nullable|integer',
-                    'setorCoordenadaY' => 'nullable|integer',
-                ]);
+    {
+        // Validação
+        $data = $request->validate([
+            'idProjeto' => 'required|integer|exists:tb_projetos,idProjeto',
+            'setores' => 'required|array|min:1',
+            'setores.*.nomeSetor' => 'required|string',
+            'setores.*.corSetor' => 'required|string',
+            'setores.*.x' => 'required|integer',
+            'setores.*.y' => 'required|integer',
+        ]);
 
-            $setor = Setor::create
-                ([
-                    'idProjeto' => $request->idProjeto,
-                    'nomeSetor' => $request->nomeSetor,
-                    'corSetor' => $request->corSetor,
-                    'setorCoordenadaX' => $request->setorCoordenadaX,
-                    'setorCoordenadaY' => $request->setorCoordenadaY,
-                ]);
+        try {
+            // Salva setores dentro de uma transação
+            DB::transaction(function() use ($data) {
+                foreach ($data['setores'] as $setor) {
+                    Setor::create([
+                        'idProjeto' => $data['idProjeto'],
+                        'nomeSetor' => $setor['nomeSetor'],
+                        'corSetor' => $setor['corSetor'],
+                        'setorCoordenadaX' => $setor['x'],
+                        'setorCoordenadaY' => $setor['y'],
+                    ]);
+                }
+            });
 
-            return redirect()->route('vagas.create', ['idProjeto' => $request->idProjeto])->with('success', 'Setor cadastrado com sucesso!');
+            return response()->json(['success' => true, 'message' => 'Setores salvos com sucesso!']);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao salvar setores: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao salvar setores.'], 500);
         }
+    }
 }
