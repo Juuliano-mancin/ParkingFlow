@@ -34,24 +34,38 @@ class SetorController extends Controller
             'setores.*.y' => 'required|integer',
         ]);
 
-        try {
-            // Salva setores dentro de uma transação
-            DB::transaction(function() use ($data) {
-                foreach ($data['setores'] as $setor) {
-                    Setor::create([
-                        'idProjeto' => $data['idProjeto'],
-                        'nomeSetor' => $setor['nomeSetor'],
-                        'corSetor' => $setor['corSetor'],
-                        'setorCoordenadaX' => $setor['x'],
-                        'setorCoordenadaY' => $setor['y'],
-                    ]);
-                }
-            });
+        try 
+            {
+                // Salva setores dentro de uma transação
+                DB::transaction(function() use ($data) {
+                    foreach ($data['setores'] as $setor) {
+                        Setor::create([
+                            'idProjeto' => $data['idProjeto'],
+                            'nomeSetor' => $setor['nomeSetor'],
+                            'corSetor' => $setor['corSetor'],
+                            'setorCoordenadaX' => $setor['x'],
+                            'setorCoordenadaY' => $setor['y'],
+                        ]);
+                    }
+                });
 
-            return response()->json(['success' => true, 'message' => 'Setores salvos com sucesso!']);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao salvar setores: '.$e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Erro ao salvar setores.'], 500);
-        }
+                return response()->json
+                    ([
+                    'success' => true,
+                    'message' => 'Setores salvos com sucesso!',
+                    'idProjeto' => $data['idProjeto']
+                    ]);
+            } 
+        catch (\Exception $e) 
+            {
+                \Log::error('Erro ao salvar setores: '.$e->getMessage());
+                return response()->json(['success' => false, 'message' => 'Erro ao salvar setores.'], 500);
+            }
     }
+
+    public function getSetores($idProjeto)
+        {
+            $setores = \App\Models\Setor::where('idProjeto', $idProjeto)->get();
+            return response()->json($setores);
+        }
 }
