@@ -34,8 +34,17 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
         Route::get('/api/setores/{idProjeto}', [SetorController::class, 'getSetores']); /* Rota GET para obter setores de um projeto específico via API */
         Route::prefix('vagas')->group(function () 
             {
+                // Vagas - rotas canônicas (sem duplicação)
                 Route::get('/create/{idProjeto}', [VagaController::class, 'create'])->name('vagas.create');
-                Route::post('/store', [VagaController::class, 'store'])->name('vagas.store');
+                Route::post('/vagas', [VagaController::class, 'store'])->name('vagas.store');
                 Route::get('/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.index');
             });
-    });    
+            // visualizar (página read-only)
+            Route::get('/vagas/visualizar/{idProjeto}', [VagaController::class, 'visualizar'])->name('vagas.visualizar');
+
+            // endpoint que já existe para JSON: listar
+            Route::get('/vagas/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.listar');
+
+            // Página de consulta / seleção de estacionamento (leva à view consultarEstacionamento)
+            Route::get('/vagas/consultar', [VagaController::class, 'consultar'])->name('vagas.consultar');
+    });

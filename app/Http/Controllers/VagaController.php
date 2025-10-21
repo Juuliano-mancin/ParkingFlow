@@ -8,6 +8,7 @@ use App\Models\Vaga;
 use App\Models\VagaGrid;
 use App\Models\Setor;
 use App\Models\Projeto;
+use Illuminate\Http\RedirectResponse;
 
 class VagaController extends Controller
 {
@@ -71,11 +72,44 @@ class VagaController extends Controller
 
     
     public function listar($idProjeto)
-        {
-            $vagas = Vaga::whereHas('setor', fn($q) => $q->where('idProjeto', $idProjeto))
-                ->with('grids')
-                ->get();
+    {
+        $vagas = Vaga::whereHas('setor', fn($q) => $q->where('idProjeto', $idProjeto))
+            ->with('grids')
+            ->get();
 
-            return response()->json($vagas);
-        }
+        return response()->json($vagas);
+    }
+
+    // === NOVO: exibir visualização read-only das vagas do projeto ===
+    public function visualizar($idProjeto)
+    {
+        $projeto = Projeto::findOrFail($idProjeto);
+        $setores = Setor::where('idProjeto', $idProjeto)->get();
+
+        $caminhoPublico = 'storage/' . ltrim($projeto->caminhoPlantaEstacionamento, '/');
+
+        return view('visualizarVagas', [
+            'projeto' => $projeto,
+            'setores' => $setores,
+            'caminhoPublico' => $caminhoPublico,
+        ]);
+    }
+
+    /**
+     * Exibe a view consultarEstacionamento.
+     * Para compatibilidade inicial carrega o primeiro projeto existente (pode ser ajustado para seleção do usuário).
+     */
+    public function consultar()
+    {
+        // Carrega todos os projetos para popular o dropdown; seleciona o primeiro como padrão
+        $projetos = Projeto::all();
+        $projeto = $projetos->first();
+        $setores = $projeto ? Setor::where('idProjeto', $projeto->idProjeto)->get() : collect();
+
+        return view('consultarEstacionamento', [
+            'projetos' => $projetos,
+            'projeto' => $projeto,
+            'setores' => $setores,
+        ]);
+    }
 }

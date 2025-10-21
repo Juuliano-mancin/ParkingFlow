@@ -9,5 +9,6 @@
     <a href="{{ route('clientes.create') }}" class="btn btn-primary mb-3"> Novo Cliente </a>
     <a href="{{ route('clientes.index') }}" class="btn btn-primary mb-3">Consultar Clientes</a>
     <a href="{{ route('estacionamentos.create') }}" class="btn btn-primary mb-3">Novo Estacionamento</a>
+    <a href="{{ route('vagas.consultar') }}" class="btn btn-primary mb-3">Visualizar Estacionamento</a>
 
 @endsection <!-- Finaliza a seção iniciada com @section('content')-->
