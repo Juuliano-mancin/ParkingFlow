@@ -24,7 +24,6 @@ class Projeto extends Model
 
         public function cliente()
             {
-                /* Define um relacionamento de "pertence a" (belongsTo) com a tabela Cliente, usando 'idCliente' como chave estrangeira e primária */
                 return $this->belongsTo(Cliente::class, 'idCliente', 'idCliente'); 
             } 
     }
