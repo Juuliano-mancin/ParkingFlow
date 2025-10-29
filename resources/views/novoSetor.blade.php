@@ -10,10 +10,12 @@
         <div class="col-8 d-flex justify-content-center align-items-center"
              style="background-color:#f0f0f0; border-right:1px solid #ccc; overflow:hidden; position:relative;">
             <div id="viewer"
-                 style="width:100%; height:100%; cursor:grab; user-select:none; background-repeat:no-repeat; background-position:center center; position:relative;">
+                 style="width:100%; height:100%; cursor:crosshair; user-select:none; background-repeat:no-repeat; background-position:center center; position:relative;">
                 <div id="grid-overlay"
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">
                 </div>
+                <!-- Elemento para seleção estilo Excel -->
+                <div id="selection-rect" style="position:absolute; border:2px dashed #007bff; background-color:rgba(0,123,255,0.1); pointer-events:none; display:none; z-index:1000;"></div>
             </div>
         </div>
 
@@ -83,6 +85,7 @@
     const imageUrl = @json(asset($caminhoPublico));
     const viewer = document.getElementById('viewer');
     const gridOverlay = document.getElementById('grid-overlay');
+    const selectionRect = document.getElementById('selection-rect');
 
     let imgNaturalW = 1, imgNaturalH = 1;
     let baseBgW = 0, baseBgH = 0;
@@ -97,12 +100,17 @@
     let startPosX = 0, startPosY = 0;
 
     // === GRID CONFIGURAÇÃO ===
-    const rows = 80;  // mais precisão
-    const cols = 80;  // quadrados menores
+    const rows = 80;
+    const cols = 80;
     const gridData = Array.from({ length: rows }, () => Array(cols).fill(null));
 
+    // === VARIÁVEIS PARA SELEÇÃO ESTILO EXCEL ===
+    let isSelecting = false;
+    let selectionStart = null;
+    let currentSelection = null;
+
     const img = new Image();
-    img.src = imageUrl + '?v=' + Date.now(); // evita cache quebrado
+    img.src = imageUrl + '?v=' + Date.now();
     img.onload = () => {
         imgNaturalW = img.naturalWidth;
         imgNaturalH = img.naturalHeight;
@@ -132,6 +140,8 @@
         viewer.style.backgroundPosition = `${posX}px ${posY}px`;
         gridOverlay.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
         gridOverlay.style.transformOrigin = 'top left';
+        selectionRect.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
+        selectionRect.style.transformOrigin = 'top left';
     }
 
     function clampPosition() {
@@ -163,32 +173,45 @@
 
         clampPosition();
         applyTransform();
+        updateGrid();
     });
 
-    // === ARRASTAR ===
+    // === ARRASTAR (MIDDLE MOUSE) ===
     viewer.addEventListener('mousedown', e => {
-        if (e.button !== 1) return;
-        e.preventDefault();
-        dragging = true;
-        startClientX = e.clientX;
-        startClientY = e.clientY;
-        startPosX = posX;
-        startPosY = posY;
-        viewer.style.cursor = 'grabbing';
+        // Middle mouse button para arrastar
+        if (e.button === 1) {
+            e.preventDefault();
+            dragging = true;
+            startClientX = e.clientX;
+            startClientY = e.clientY;
+            startPosX = posX;
+            startPosY = posY;
+            viewer.style.cursor = 'grabbing';
+        }
     });
 
     window.addEventListener('mousemove', e => {
-        if (!dragging) return;
-        posX = startPosX + (e.clientX - startClientX);
-        posY = startPosY + (e.clientY - startClientY);
-        clampPosition();
-        applyTransform();
+        if (dragging) {
+            posX = startPosX + (e.clientX - startClientX);
+            posY = startPosY + (e.clientY - startClientY);
+            clampPosition();
+            applyTransform();
+        }
+        
+        // Seleção com left mouse button
+        if (isSelecting) {
+            handleSelectionMove(e);
+        }
     });
 
     window.addEventListener('mouseup', e => {
-        if (e.button === 1) {
+        if (e.button === 1 && dragging) {
             dragging = false;
-            viewer.style.cursor = 'grab';
+            viewer.style.cursor = 'crosshair';
+        }
+        
+        if (e.button === 0 && isSelecting) {
+            handleSelectionEnd(e);
         }
     });
 
@@ -207,9 +230,10 @@
                     backgroundColor: 'transparent',
                     pointerEvents: 'auto'
                 });
-                cell.addEventListener('mousedown', handleCellPaint);
-                cell.addEventListener('mouseenter', handleCellHover);
-                cell.addEventListener('dblclick', handleCellClear);
+                
+                // Event listeners para seleção
+                cell.addEventListener('mousedown', handleSelectionStart);
+                
                 gridOverlay.appendChild(cell);
             }
         }
@@ -229,33 +253,136 @@
         }
     }
 
-    // === PINTURA ===
-    let activeSector = null;
-    let isPainting = false;
-    let eraserMode = false;
+    // === SELEÇÃO ESTILO EXCEL ===
+    function handleSelectionStart(e) {
+        if (e.button !== 0 || (!activeSector && !eraserMode)) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isSelecting = true;
+        const cell = e.target.closest('.grid-cell');
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        
+        selectionStart = { row, col };
+        currentSelection = { 
+            startRow: row, 
+            startCol: col, 
+            endRow: row, 
+            endCol: col 
+        };
+        
+        updateSelectionRect();
+        selectionRect.style.display = 'block';
+        
+        // Previne seleção de texto durante o drag
+        viewer.style.userSelect = 'none';
+    }
 
-    function handleCellPaint(e){ e.preventDefault(); isPainting = true; paintCell(e.target); }
-    function handleCellHover(e){ if(isPainting) paintCell(e.target); }
-    window.addEventListener('mouseup', () => isPainting=false);
-
-    function paintCell(cell){
-        const r = +cell.dataset.row;
-        const c = +cell.dataset.col;
-        if(eraserMode){
-            gridData[r][c] = null;
-            cell.style.backgroundColor='transparent';
-        } else if(activeSector){
-            gridData[r][c] = activeSector.name;
-            cell.style.backgroundColor = activeSector.color;
+    function handleSelectionMove(e) {
+        if (!isSelecting) return;
+        
+        const cell = e.target.closest('.grid-cell');
+        if (cell) {
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            // Atualiza apenas se mudou de célula
+            if (currentSelection.endRow !== row || currentSelection.endCol !== col) {
+                currentSelection.endRow = row;
+                currentSelection.endCol = col;
+                updateSelectionRect();
+            }
+        } else {
+            // Se não está sobre uma célula, calcula baseado na posição do mouse
+            const rect = gridOverlay.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const cellW = baseBgW / cols;
+            const cellH = baseBgH / rows;
+            
+            const col = Math.floor(mouseX / cellW);
+            const row = Math.floor(mouseY / cellH);
+            
+            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                if (currentSelection.endRow !== row || currentSelection.endCol !== col) {
+                    currentSelection.endRow = row;
+                    currentSelection.endCol = col;
+                    updateSelectionRect();
+                }
+            }
         }
     }
 
-    function handleCellClear(e){
-        const r = +e.target.dataset.row;
-        const c = +e.target.dataset.col;
-        gridData[r][c] = null;
-        e.target.style.backgroundColor='transparent';
+    function handleSelectionEnd(e) {
+        if (!isSelecting) return;
+        
+        isSelecting = false;
+        selectionRect.style.display = 'none';
+        viewer.style.userSelect = 'auto';
+        
+        // Aplica a cor aos cells selecionados
+        applyColorToSelection();
+        
+        selectionStart = null;
+        currentSelection = null;
     }
+
+    function updateSelectionRect() {
+        if (!currentSelection) return;
+        
+        const cellW = baseBgW / cols;
+        const cellH = baseBgH / rows;
+        
+        const startRow = Math.min(currentSelection.startRow, currentSelection.endRow);
+        const endRow = Math.max(currentSelection.startRow, currentSelection.endRow);
+        const startCol = Math.min(currentSelection.startCol, currentSelection.endCol);
+        const endCol = Math.max(currentSelection.startCol, currentSelection.endCol);
+        
+        const left = startCol * cellW;
+        const top = startRow * cellH;
+        const width = (endCol - startCol + 1) * cellW;
+        const height = (endRow - startRow + 1) * cellH;
+        
+        // Aplica a mesma transformação do grid overlay
+        selectionRect.style.left = `${left}px`;
+        selectionRect.style.top = `${top}px`;
+        selectionRect.style.width = `${width}px`;
+        selectionRect.style.height = `${height}px`;
+    }
+
+    function applyColorToSelection() {
+        if (!currentSelection) return;
+        
+        const startRow = Math.min(currentSelection.startRow, currentSelection.endRow);
+        const endRow = Math.max(currentSelection.startRow, currentSelection.endRow);
+        const startCol = Math.min(currentSelection.startCol, currentSelection.endCol);
+        const endCol = Math.max(currentSelection.startCol, currentSelection.endCol);
+        
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                if (eraserMode) {
+                    gridData[r][c] = null;
+                    const cell = getCellAt(r, c);
+                    if (cell) cell.style.backgroundColor = 'transparent';
+                } else if (activeSector) {
+                    gridData[r][c] = activeSector.name;
+                    const cell = getCellAt(r, c);
+                    if (cell) cell.style.backgroundColor = activeSector.color;
+                }
+            }
+        }
+    }
+
+    function getCellAt(row, col) {
+        return gridOverlay.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+    }
+
+    // === PINTURA ===
+    let activeSector = null;
+    let eraserMode = false;
 
     // === GERAR SETORES ===
     const cores = [
@@ -279,16 +406,22 @@
                 width:'80px',height:'80px',backgroundColor:cores[i],
                 display:'flex',justifyContent:'center',alignItems:'center',cursor:'pointer'
             });
-            card.textContent=`Setor ${String.fromCharCode(65+i)}`;
+            const setorName = `Setor ${String.fromCharCode(65+i)}`;
+            card.textContent = setorName;
             card.addEventListener('click', ()=> {
-                if(activeSector && activeSector.name===card.textContent){
+                if(activeSector && activeSector.name===setorName){
                     activeSector=null;
                     card.style.outline='';
                 } else {
-                    activeSector={name:card.textContent,color:cores[i]};
+                    activeSector={
+                        name: setorName,
+                        color: cores[i]
+                    };
                     eraserMode=false;
                     document.querySelectorAll('#setoresContainer div').forEach(c=>c.style.outline='');
                     card.style.outline='3px solid #000';
+                    document.getElementById('btnBorracha').classList.remove('btn-secondary');
+                    document.getElementById('btnBorracha').classList.add('btn-outline-secondary');
                 }
             });
             setoresContainer.appendChild(card);
@@ -303,15 +436,20 @@
 
     document.getElementById('btnBorracha').addEventListener('click', ()=>{
         eraserMode=!eraserMode;
+        activeSector = null;
         const btn=document.getElementById('btnBorracha');
         btn.classList.toggle('btn-secondary',eraserMode);
         btn.classList.toggle('btn-outline-secondary',!eraserMode);
+        
+        // Remove outline dos setores
+        document.querySelectorAll('#setoresContainer div').forEach(c=>c.style.outline='');
     });
 
     // === SALVAR ===
     document.getElementById('btnSalvar').addEventListener('click', async () => {
         const setoresMap = {};
 
+        // Coletar dados do grid
         for (let r = 0; r < gridData.length; r++) {
             for (let c = 0; c < gridData[r].length; c++) {
                 const setor = gridData[r][c];
@@ -336,12 +474,17 @@
             }))
         );
 
-        if (setoresArray.length === 0) return alert('⚠️ Nenhum setor definido!');
+        if (setoresArray.length === 0) {
+            alert('⚠️ Nenhum setor definido!');
+            return;
+        }
 
         const payload = {
             idProjeto: @json($projeto->idProjeto),
             setores: setoresArray
         };
+
+        console.log('Enviando dados:', payload);
 
         try {
             const response = await fetch("{{ route('setores.store') }}", {
@@ -354,20 +497,29 @@
             });
 
             const result = await response.json();
+            console.log('Resposta do servidor:', result);
+            
             if (result.success) {
                 alert('✅ Setores salvos com sucesso!');
-                window.location.href = `/vagas/nova/${result.idProjeto}`;
-            } else alert('⚠️ Erro ao salvar.');
+                if (result.idProjeto) {
+                    window.location.href = `/vagas/nova/${result.idProjeto}`;
+                }
+            } else {
+                alert('⚠️ Erro ao salvar: ' + (result.message || 'Erro desconhecido'));
+            }
         } catch (err) {
-            console.error(err);
-            alert('❌ Falha ao comunicar com o servidor.');
+            console.error('Erro na requisição:', err);
+            alert('❌ Falha ao comunicar com o servidor. Verifique o console para detalhes.');
         }
     });
 
     function getSectorColor(nomeSetor) {
         const card = Array.from(document.querySelectorAll('#setoresContainer div'))
             .find(c => c.textContent === nomeSetor);
-        return card ? card.style.backgroundColor : 'rgba(0,0,0,0.5)';
+        if (card) {
+            return card.style.backgroundColor;
+        }
+        return 'rgba(0,0,0,0.5)';
     }
 
     // === RESUMO ===
@@ -386,8 +538,13 @@
                 setoresMap[setor]++;
             }
         }
-        for(const setor in setoresMap){
-            resumoBody.innerHTML+=`<tr><td>${setor}</td><td>${setoresMap[setor]}</td></tr>`;
+        
+        if (Object.keys(setoresMap).length === 0) {
+            resumoBody.innerHTML = '<tr><td colspan="2" class="text-center">Nenhum setor definido</td></tr>';
+        } else {
+            for(const setor in setoresMap){
+                resumoBody.innerHTML+=`<tr><td>${setor}</td><td>${setoresMap[setor]}</td></tr>`;
+            }
         }
         resumoContainer.style.display='block';
     });
