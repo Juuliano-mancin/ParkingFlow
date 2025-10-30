@@ -39,12 +39,10 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
                 Route::post('/vagas', [VagaController::class, 'store'])->name('vagas.store');
                 Route::get('/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.index');
             });
-            // visualizar (página read-only)
-            Route::get('/vagas/visualizar/{idProjeto}', [VagaController::class, 'visualizar'])->name('vagas.visualizar');
+            
+            Route::get('/vagas/visualizar/{idProjeto}', [VagaController::class, 'visualizar'])->name('vagas.visualizar'); // visualizar (página read-only)            
+            Route::get('/vagas/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.listar'); // endpoint que já existe para JSON: listar
+            Route::get('/vagas/consultar', [VagaController::class, 'consultar'])->name('vagas.consultar'); // Página de consulta / seleção de estacionamento (leva à view consultarEstacionamento)
+            Route::get('/painel-disponibilidade', [App\Http\Controllers\PainelDisponibilidadeController::class, 'index'])->name('painel.disponibilidade'); // Painel de disponibilidade de setores
 
-            // endpoint que já existe para JSON: listar
-            Route::get('/vagas/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.listar');
-
-            // Página de consulta / seleção de estacionamento (leva à view consultarEstacionamento)
-            Route::get('/vagas/consultar', [VagaController::class, 'consultar'])->name('vagas.consultar');
     });

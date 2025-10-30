@@ -10,5 +10,6 @@
     <a href="{{ route('clientes.index') }}" class="btn btn-primary mb-3">Consultar Clientes</a>
     <a href="{{ route('estacionamentos.create') }}" class="btn btn-primary mb-3">Novo Estacionamento</a>
     <a href="{{ route('vagas.consultar') }}" class="btn btn-primary mb-3">Visualizar Estacionamento</a>
+    <a href="{{ route('painel.disponibilidade') }}" class="btn btn-primary mb-3">Painel de Disponibilidade</a>
 
 @endsection <!-- Finaliza a seção iniciada com @section('content')-->

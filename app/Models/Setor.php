@@ -25,4 +25,9 @@ class Setor extends Model
     {
         return $this->belongsTo(\App\Models\Projeto::class, 'idProjeto', 'idProjeto');
     }
+
+    public function vagas()
+    {
+        return $this->hasMany(\App\Models\Vaga::class, 'idSetor', 'idSetor');
+    }
 }

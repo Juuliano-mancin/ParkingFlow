@@ -28,14 +28,12 @@
                     <div id="legendaSetores" class="d-flex flex-wrap gap-2 justify-content-center"></div>
                 </div>
 
-                <!-- === SELECTOR DE SETOR (usar idSetor ao criar vagas) -->
+                <!-- === INFO SETOR ATUAL (automático) === -->
                 <div class="card p-3 mb-4 shadow-sm">
-                    <h5 class="mb-2 text-center">Setor atual</h5>
-                    <select id="selectSetor" class="form-select">
-                        @foreach($setores as $s)
-                            <option value="{{ $s->idSetor }}">{{ $s->nomeSetor }}</option>
-                        @endforeach
-                    </select>
+                    <h5 class="mb-2 text-center">Setor Atual</h5>
+                    <div id="setorInfo" class="text-center p-2 border rounded bg-light">
+                        <small class="text-muted">Selecione uma área no mapa</small>
+                    </div>
                 </div>
 
                 <!-- === LISTA DE TIPOS (toolbar) === -->
@@ -72,13 +70,9 @@
 
 <script>
 /*
-  novaVaga.blade.php
-  - Grid sobre a planta
-  - Seleção retangular de células (tipo Excel) cria vagas temporárias (array `vagas`)
-  - Toolbar com tipos: carro, moto, idoso, deficiente (aplica tipo para próxima seleção)
-  - Borracha remove vaga inteira ao clicar em qualquer célula da vaga
-  - Legenda de setores apenas visual (carregada via API /api/setores/{idProjeto})
-  - Zoom (wheel) e pan (botão do meio) funcionais
+  novaVaga.blade.php - CORRIGIDA
+  - Identifica automaticamente o setor baseado nas coordenadas
+  - Remove dropdown de seleção manual
 */
 
 (async function () {
@@ -103,18 +97,17 @@
     // Grid: tamanho e dados
     const rows = 80;
     const cols = 80;
-    const gridData = Array.from({ length: rows }, () => Array(cols).fill(null)); // usada para armazenar setores de fundo (se houver)
 
-    // Sector grid visual (cores do setor por célula) - opcional se API fornecer coordenadas
-    const sectorGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
-    let setorColors = {}; // mapa nomeSetor -> cor (para legenda)
-    let sectoresList = []; // dados crus vindos da API
+    // Mapa de setores por coordenada
+    const sectorMap = new Map(); // key: "x,y" -> setor data
+    let setorColors = {};
+    let sectoresList = [];
 
-    // Vagas temporárias: array com objetos {nomeVaga, tipoVaga, posicoes:[{x,y}], id:number}
+    // Vagas temporárias
     let vagas = [];
     let vagaCounter = 0;
 
-    // Tipos de vaga e cores (com transparência)
+    // Tipos de vaga e cores
     const tipoColors = {
         carro: 'rgba(0,123,255,0.6)',
         moto: 'rgba(40,167,69,0.6)',
@@ -123,25 +116,16 @@
     };
     let currentTipo = 'carro';
 
-    // selecionador de setor (inicializado a partir do <select> blade)
-    let selectedSetorId = null;
-    const selectSetorEl = document.getElementById('selectSetor');
-    if (selectSetorEl) {
-        selectedSetorId = Number(selectSetorEl.value);
-        selectSetorEl.addEventListener('change', () => {
-            selectedSetorId = Number(selectSetorEl.value);
-        });
-    }
+    // Setor atual (detectado automaticamente)
+    let currentSetor = null;
 
-    // Estado de seleção de retângulo
+    // Estado de seleção
     let selecting = false;
-    let selStart = null; // {r,c}
+    let selStart = null;
     let selEnd = null;
-
-    // Eraser mode
     let eraserMode = false;
 
-    // Carrega imagem da planta e inicia grid
+    // Carrega imagem da planta
     const img = new Image();
     img.src = imageUrl + '?v=' + Date.now();
     img.onload = () => {
@@ -150,10 +134,9 @@
         viewer.style.backgroundImage = `url(${imageUrl})`;
         initSizesAndPosition();
         createGrid();
-        loadSetores(); // preenche sectorGrid e legenda
+        loadSetores();
     };
 
-    // Ajusta tamanho base e centraliza imagem
     function initSizesAndPosition() {
         const containerW = viewer.clientWidth;
         const containerH = viewer.clientHeight;
@@ -187,7 +170,7 @@
         posY = Math.min(0, Math.max(containerH - bgH, posY));
     }
 
-    // Zoom com roda do mouse (centraliza no ponteiro)
+    // Event listeners para zoom e pan (mantidos iguais)
     viewer.addEventListener('wheel', e => {
         e.preventDefault();
         const zoomSpeed = 1.12;
@@ -209,13 +192,11 @@
 
         clampPosition();
         applyTransform();
-        updateGrid(); // reajusta posições/size das células
-        renderAll(); // redesenha estado visível
+        updateGrid();
+        renderAll();
     });
 
-    // Pan com botão do meio (wheel click)
     viewer.addEventListener('mousedown', e => {
-        // botão do meio (1) para pan
         if (e.button === 1) {
             e.preventDefault();
             dragging = true;
@@ -234,11 +215,12 @@
             clampPosition();
             applyTransform();
         } else if (selecting) {
-            // atualizar seleção se usuário estiver selecionando em cells
             const cell = getCellFromClientPoint(e.clientX, e.clientY);
             if (cell) {
                 selEnd = { r: +cell.dataset.row, c: +cell.dataset.col };
                 highlightSelection();
+                // Atualiza info do setor durante a seleção
+                updateSetorInfo(selStart);
             }
         }
     });
@@ -250,7 +232,6 @@
         }
 
         if (selecting && e.button === 0) {
-            // finalizar seleção retangular
             finalizeSelection();
             selecting = false;
             selStart = selEnd = null;
@@ -274,33 +255,29 @@
                     pointerEvents: 'auto'
                 });
 
-                // Interações:
-                // - Clique esquerdo inicia seleção retangular
                 cell.addEventListener('mousedown', e => {
                     if (e.button !== 0) return;
                     e.preventDefault();
-                    // modo borracha: apagar vaga inteira ao clicar em qualquer célula da vaga
+                    
                     if (eraserMode) {
                         const vagaId = cell.dataset.vagaId;
                         if (vagaId) removeVagaById(Number(vagaId));
                         return;
                     }
 
-                    // iniciar seleção retangular
                     selecting = true;
                     selStart = { r: +cell.dataset.row, c: +cell.dataset.col };
                     selEnd = { r: selStart.r, c: selStart.c };
                     highlightSelection();
+                    updateSetorInfo(selStart);
                 });
 
-                // hover enquanto seleciona é tratado pelo mousemove global (getCellFromClientPoint)
                 gridOverlay.appendChild(cell);
             }
         }
         updateGrid();
     }
 
-    // ajusta largura/altura e posição das células em função do tamanho base (baseBgW/baseBgH)
     function updateGrid() {
         const cellW = baseBgW / cols;
         const cellH = baseBgH / rows;
@@ -315,10 +292,8 @@
         renderAll();
     }
 
-    // retorna o elemento .grid-cell sob as coordenadas de client (considera transform do gridOverlay)
     function getCellFromClientPoint(clientX, clientY) {
         const rect = viewer.getBoundingClientRect();
-        // converte client para coordenadas locais do grid (considerando posX/posY e escala)
         const localX = (clientX - rect.left - posX) / (bgW / baseBgW);
         const localY = (clientY - rect.top - posY) / (bgH / baseBgH);
         if (localX < 0 || localY < 0) return null;
@@ -330,7 +305,31 @@
         return gridOverlay.querySelector(`.grid-cell[data-row='${r}'][data-col='${c}']`);
     }
 
-    // usa selStart/selEnd para pintar highlight temporário
+    // === IDENTIFICAÇÃO AUTOMÁTICA DO SETOR ===
+    function findSetorByCoordinate(x, y) {
+        const key = `${x},${y}`;
+        return sectorMap.get(key) || null;
+    }
+
+    function updateSetorInfo(startCoord) {
+        const setor = findSetorByCoordinate(startCoord.c, startCoord.r);
+        const setorInfoEl = document.getElementById('setorInfo');
+        
+        if (setor) {
+            currentSetor = setor;
+            setorInfoEl.innerHTML = `
+                <div style="background:${setor.corSetor}; width:20px; height:20px; border-radius:3px; display:inline-block; vertical-align:middle;"></div>
+                <strong>${setor.nomeSetor}</strong>
+            `;
+            setorInfoEl.className = 'text-center p-2 border rounded';
+            setorInfoEl.style.backgroundColor = setorColorWithAlpha(setor.corSetor);
+        } else {
+            currentSetor = null;
+            setorInfoEl.innerHTML = '<small class="text-danger">⚠️ Nenhum setor encontrado nesta área</small>';
+            setorInfoEl.className = 'text-center p-2 border rounded bg-light';
+        }
+    }
+
     function highlightSelection() {
         removeSelectionHighlight();
         if (!selStart || !selEnd) return;
@@ -338,7 +337,7 @@
         const r2 = Math.max(selStart.r, selEnd.r);
         const c1 = Math.min(selStart.c, selEnd.c);
         const c2 = Math.max(selStart.c, selEnd.c);
-        // seleção de retângulo de no mínimo 2 células (área > 1). requisito: não permitir únicas.
+        
         for (let r = r1; r <= r2; r++) {
             for (let c = c1; c <= c2; c++) {
                 const cell = gridOverlay.querySelector(`.grid-cell[data-row='${r}'][data-col='${c}']`);
@@ -356,7 +355,6 @@
         });
     }
 
-    // finalizeSelection cria a vaga se área > 1 (mais de uma célula)
     function finalizeSelection() {
         if (!selStart || !selEnd) return;
         const r1 = Math.min(selStart.r, selEnd.r);
@@ -365,12 +363,15 @@
         const c2 = Math.max(selStart.c, selEnd.c);
         const height = r2 - r1 + 1;
         const width = c2 - c1 + 1;
-        if (width * height <= 1) {
-            // não permite criar vaga de célula única
+        
+        if (width * height <= 1) return;
+
+        // Verifica se há setor válido
+        if (!currentSetor) {
+            alert('⚠️ Não é possível criar vaga nesta área. Nenhum setor encontrado.');
             return;
         }
 
-        // construir posicoes
         const posicoes = [];
         for (let r = r1; r <= r2; r++) {
             for (let c = c1; c <= c2; c++) {
@@ -378,71 +379,57 @@
             }
         }
 
-        // validar que existe setor selecionado (controller exige idSetor)
-        if (!selectedSetorId) {
-            alert('Selecione um setor antes de criar a vaga.');
-            return;
-        }
-
-        // salvar vaga temporária (mantém posicoes no objeto para render)
         vagaCounter++;
-        const vagaId = Date.now() + vagaCounter; // id único temporário
+        const vagaId = Date.now() + vagaCounter;
         const nomeVaga = `Vaga ${vagaCounter}`;
         const vaga = {
             id: vagaId,
             nomeVaga,
             tipoVaga: currentTipo,
-            idSetor: selectedSetorId,
+            idSetor: currentSetor.idSetor,
             posicoes
         };
         vagas.push(vaga);
 
-        // marca células com dataset.vagaId e estilo overlay
         markCellsForVaga(vaga);
-
         updateVagasList();
     }
 
-    // marca células visualmente para uma vaga
     function markCellsForVaga(vaga) {
         const color = tipoColors[vaga.tipoVaga] || tipoColors.carro;
         vaga.posicoes.forEach(p => {
             const cell = gridOverlay.querySelector(`.grid-cell[data-row='${p.y}'][data-col='${p.x}']`);
             if (!cell) return;
             cell.dataset.vagaId = vaga.id;
-            // aplica cor com blend (mantém setor por baixo)
             cell.style.backgroundColor = color;
         });
     }
 
-    // remove visualmente e do array a vaga com id
     function removeVagaById(id) {
         const idx = vagas.findIndex(v => v.id === id);
         if (idx === -1) return;
         const vaga = vagas[idx];
-        // limpar células
+        
         vaga.posicoes.forEach(p => {
             const cell = gridOverlay.querySelector(`.grid-cell[data-row='${p.y}'][data-col='${p.x}']`);
             if (!cell) return;
             delete cell.dataset.vagaId;
-            // re-render para provocar cor de setor de fundo ou limpar
-            const setorNome = sectorGrid[p.y][p.x];
-            cell.style.backgroundColor = setorNome ? setorColorWithAlpha(setorColors[setorNome]) : 'rgba(0,0,0,0.04)';
+            const setor = findSetorByCoordinate(p.x, p.y);
+            cell.style.backgroundColor = setor ? setorColorWithAlpha(setor.corSetor) : 'rgba(0,0,0,0.04)';
         });
-        // remover do array
+        
         vagas.splice(idx, 1);
         updateVagasList();
     }
 
-    // limpa todas as vagas temporárias
     function clearAllVagas() {
         vagas.forEach(vaga => {
             vaga.posicoes.forEach(p => {
                 const cell = gridOverlay.querySelector(`.grid-cell[data-row='${p.y}'][data-col='${p.x}']`);
                 if (!cell) return;
                 delete cell.dataset.vagaId;
-                const setorNome = sectorGrid[p.y][p.x];
-                cell.style.backgroundColor = setorNome ? setorColorWithAlpha(setorColors[setorNome]) : 'rgba(0,0,0,0.04)';
+                const setor = findSetorByCoordinate(p.x, p.y);
+                cell.style.backgroundColor = setor ? setorColorWithAlpha(setor.corSetor) : 'rgba(0,0,0,0.04)';
             });
         });
         vagas = [];
@@ -450,15 +437,22 @@
         updateVagasList();
     }
 
-    // atualiza lista lateral de vagas temporárias
     function updateVagasList() {
         const container = document.getElementById('vagasList');
         container.innerHTML = '';
         vagas.forEach(v => {
+            const setor = sectoresList.find(s => s.idSetor === v.idSetor);
             const div = document.createElement('div');
             div.className = 'd-flex justify-content-between align-items-center p-1';
             div.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
-            div.innerHTML = `<small>${v.nomeVaga} <span class="badge bg-light text-dark ms-2">${v.tipoVaga}</span></small>`;
+            div.innerHTML = `
+                <small>
+                    ${v.nomeVaga} 
+                    <span class="badge bg-light text-dark ms-2">${v.tipoVaga}</span>
+                    <br>
+                    <small class="text-muted">Setor: ${setor ? setor.nomeSetor : 'N/A'}</small>
+                </small>
+            `;
             const btn = document.createElement('button');
             btn.className = 'btn btn-sm btn-outline-danger';
             btn.textContent = 'Remover';
@@ -468,12 +462,9 @@
         });
     }
 
-    // ajuste visual da célula com cor do setor (com alpha)
     function setorColorWithAlpha(hexOrRgb) {
-        // se já é rgba, retorna
         if (!hexOrRgb) return 'transparent';
         if (hexOrRgb.startsWith('rgba')) return hexOrRgb;
-        // convert hex -> rgba(,0.25)
         try {
             const hex = hexOrRgb.replace('#', '');
             const bigint = parseInt(hex, 16);
@@ -486,44 +477,41 @@
         }
     }
 
-    // renderiza setor de fundo e vagas sobre as células
     function renderAll() {
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cell = gridOverlay.querySelector(`.grid-cell[data-row='${r}'][data-col='${c}']`);
                 if (!cell) continue;
-                // prioridade: vaga temporária > setor de fundo > padrão
+                
                 const vagaId = cell.dataset.vagaId;
                 if (vagaId) {
-                    // encontrar vaga para saber tipo (poderíamos derivar do vagas array)
                     const vagaObj = vagas.find(v => String(v.id) === String(vagaId));
                     cell.style.backgroundColor = vagaObj ? (tipoColors[vagaObj.tipoVaga] || tipoColors.carro) : 'rgba(0,0,0,0.06)';
                 } else {
-                    const setorNome = sectorGrid[r][c];
-                    cell.style.backgroundColor = setorNome ? setorColorWithAlpha(setorColors[setorNome]) : 'rgba(0,0,0,0.04)';
+                    const setor = findSetorByCoordinate(c, r);
+                    cell.style.backgroundColor = setor ? setorColorWithAlpha(setor.corSetor) : 'rgba(0,0,0,0.04)';
                 }
             }
         }
     }
 
-    // === LOAD SETORES (API) e build legenda ===
+    // === LOAD SETORES - Agora mapeia por coordenadas ===
     async function loadSetores() {
         try {
             const response = await fetch(`/api/setores/{{ $projeto->idProjeto }}`);
             const setores = await response.json();
-            // setores pode ter múltiplos registros por setor (dependendo do backend).
             sectoresList = setores;
 
-            // popular setorColors e, se houver coordenadas, popular sectorGrid
+            // Limpa o mapa anterior
+            sectorMap.clear();
+            setorColors = {};
+
+            // Preenche o mapa de setores por coordenada
             setores.forEach(s => {
-                if (!setorColors[s.nomeSetor]) setorColors[s.nomeSetor] = s.corSetor || '#6c757d';
-                // se o backend armazenou coordenadas (setorCoordenadaX/Y) usamos para marcar o grid (pode ser só um ponto)
                 if (s.setorCoordenadaY != null && s.setorCoordenadaX != null) {
-                    const ry = Number(s.setorCoordenadaY);
-                    const cx = Number(s.setorCoordenadaX);
-                    if (ry >= 0 && ry < rows && cx >= 0 && cx < cols) {
-                        sectorGrid[ry][cx] = s.nomeSetor;
-                    }
+                    const key = `${s.setorCoordenadaX},${s.setorCoordenadaY}`;
+                    sectorMap.set(key, s);
+                    setorColors[s.nomeSetor] = s.corSetor || '#6c757d';
                 }
             });
 
@@ -534,7 +522,6 @@
         }
     }
 
-    // cria a legenda visual de setores (apenas leitura)
     function buildLegend(setores) {
         const legendaCard = document.getElementById('legendaSetoresCard');
         const container = document.getElementById('legendaSetores');
@@ -552,11 +539,10 @@
         if (unique.length) legendaCard.style.display = 'block';
     }
 
-    // === BUILD TIPOS TOOLBAR ===
     function buildTiposToolbar() {
         const toolbar = document.getElementById('tiposToolbar');
         toolbar.innerHTML = '';
-        Object.keys(tipoColors).forEach((tipo, idx) => {
+        Object.keys(tipoColors).forEach((tipo) => {
             const btn = document.createElement('button');
             btn.className = 'btn btn-sm ' + (tipo === currentTipo ? 'btn-primary' : 'btn-outline-secondary');
             btn.textContent = tipo.toUpperCase();
@@ -572,10 +558,9 @@
         });
     }
 
-    // inicializar toolbar
     buildTiposToolbar();
 
-    // === CONTROLES ===
+    // Controles
     document.getElementById('btnLimpar').addEventListener('click', () => {
         if (!confirm('Remover todas as vagas temporárias?')) return;
         clearAllVagas();
@@ -588,19 +573,19 @@
         btn.classList.toggle('btn-outline-secondary', !eraserMode);
     });
 
-    // SALVAR vagas via fetch para rota vagas.store (como o controller espera: array de vagas)
     document.getElementById('btnSalvar').addEventListener('click', async () => {
         if (vagas.length === 0) return alert('⚠️ Nenhuma vaga definida!');
-        // construir payload conforme requerido pelo controller (observação: controller valida 'coordenadas')
+        
         const payload = {
             idProjeto: @json($projeto->idProjeto),
             vagas: vagas.map((v) => ({
                 idSetor: v.idSetor,
                 nomeVaga: v.nomeVaga,
                 tipoVaga: v.tipoVaga,
-                coordenadas: v.posicoes // controller espera campo "coordenadas"
+                coordenadas: v.posicoes
             }))
         };
+        
         try {
             const response = await fetch("{{ route('vagas.store') }}", {
                 method: 'POST',
@@ -613,7 +598,6 @@
             const result = await response.json();
             if (result.success) {
                 alert('✅ Vagas salvas com sucesso!');
-                // opcional: limpar vagas temporárias após sucesso
                 clearAllVagas();
             } else {
                 alert('⚠️ Erro ao salvar: ' + (result.message || 'Verifique servidor.'));
@@ -624,27 +608,22 @@
         }
     });
 
-    // rerender quando a janela redimensionar (mantém grid alinhada)
     window.addEventListener('resize', () => {
         initSizesAndPosition();
     });
 
-    // Se quiser render manualmente (após mudanças)
     function renderGridCells() {
         updateGrid();
         renderAll();
     }
 
-    // inicial render
     renderGridCells();
 
 })();
 </script>
 
 <style>
-/* estilos locais para as células e seleção */
 .grid-cell.selecting {
-    /* destaque temporário da seleção */
     mix-blend-mode: normal;
 }
 .grid-cell {
