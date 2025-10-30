@@ -34,11 +34,6 @@
         h4, label {
             text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         }
-        .form-control::placeholder {
-            color: #b8b8b8ff;
-            font-size: 1rem;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 
