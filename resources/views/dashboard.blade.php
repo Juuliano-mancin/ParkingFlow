@@ -14,8 +14,14 @@
             box-shadow: 1px 5px 6px rgba(0, 0, 0, 0.56);
         }
         .img-fluid {
-            filter: brightness(0) invert(1);
+            filter: invert(1); /* imagem branca por padrão */
             width: 15%;
+            transition: filter 0.3s ease;
+        }
+
+        /* quando o mouse estiver sobre o link (<a>), muda a imagem */
+        a.btn:hover .img-fluid {
+            filter: invert(0); /* imagem preta */
         }
         h1 {
             text-shadow: 1px 4px 5px rgba(51, 51, 51, 0.3);

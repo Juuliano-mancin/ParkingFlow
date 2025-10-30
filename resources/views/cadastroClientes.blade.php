@@ -26,7 +26,7 @@
     }
 </style>
 
-<div class="container mt-5 p-4 border-custom shadow">
+<div class="container mt-5 p-5 border-custom shadow">
     <h1 class="fs-2 mb-1 underline-title">Cadastro de Cliente</h1>
 
     {{-- Exibe mensagens de erro --}}
