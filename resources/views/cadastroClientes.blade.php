@@ -4,8 +4,30 @@
 @section('title', 'Cadastro de Clientes')
 
 @section('content')
-<div class="container mt-4">
-    <h1>Cadastro de Cliente</h1>
+<style>
+    h1 {
+        text-shadow: 1px 4px 5px rgba(51, 51, 51, 0.3);
+    }
+    .border-custom {
+        border: 1px solid #4B4B4B;
+    }
+    .underline-title {
+        position: relative;
+        padding-bottom: 0.6rem;
+    }
+    .underline-title::after {
+        content: "";
+        display: block;
+        width: 100%;          
+        height: 1px;           
+        background: #F2C200;    
+        border-radius: 2px;
+        margin: 0.8rem 0;  
+    }
+</style>
+
+<div class="container mt-5 p-5 border-custom shadow">
+    <h1 class="fs-2 mb-1 underline-title">Cadastro de Cliente</h1>
 
     {{-- Exibe mensagens de erro --}}
     @if ($errors->any())
