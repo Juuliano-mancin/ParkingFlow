@@ -60,7 +60,15 @@
                     <span class="fs-4">Visualizar Estacionamento</span>
                 </a>
             </div>
+
+            <div class="col-md-6">
+                <a href="{{ route('painel.disponibilidade') }}"
+                class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 gap-4 text-center">
+                    <img src="{{ asset('visualizacao.png') }}" alt="Visualizar Estacionamento" class="img-fluid" style="max-height:120px; object-fit:contain;">
+                    <span class="fs-4">Painel Disponibilidade</span>
+                </a>
+            </div>
+
         </div>
     </div>
-
 @endsection <!-- Finaliza a seção iniciada com @section('content')-->
