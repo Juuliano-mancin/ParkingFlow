@@ -135,3 +135,30 @@
         {{ $buttonText ?? 'Salvar' }}
     </button>
 </div>
+
+<script>
+let cepTimer;
+
+document.getElementById('cepCliente').addEventListener('input', function () {
+    clearTimeout(cepTimer); // evita múltiplas requisições
+
+    const cep = this.value.replace(/\D/g, '');
+
+    if (cep.length === 8) {
+        cepTimer = setTimeout(() => {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        document.getElementById('logradouroCliente').value = data.logradouro;
+                        document.getElementById('cidadeCliente').value = data.localidade;
+                        document.getElementById('ufCliente').value = data.uf;
+                    }
+                })
+                .catch(() => {
+                    console.log("Erro ao buscar o CEP.");
+                });
+        }, 300); // pequeno atraso para não disparar múltiplas vezes
+    }
+});
+</script>
