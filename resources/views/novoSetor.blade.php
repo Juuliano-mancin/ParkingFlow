@@ -3,14 +3,19 @@
 @section('title', 'Novo Setor')
 
 @section('content')
-<div class="container-fluid p-0" style="height:100vh;">
-    <div class="row h-100">
+<div class="container-fluid p-0 vh-100">
+    <div class="row g-0 h-100">
 
-        <!-- === VIEWPORT PRINCIPAL === -->
-        <div class="col-8 d-flex justify-content-center align-items-center"
-             style="background-color:#f0f0f0; border-right:1px solid #ccc; overflow:hidden; position:relative;">
+        <!-- === VIEWPORT PRINCIPAL - COLUNA 8 === -->
+        <div class="col-8 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
+            
+            <!-- Indicador de Zoom -->
+            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
+                <span id="zoomLevel">100%</span>
+            </div>
+            
             <div id="viewer"
-                 style="width:100%; height:100%; cursor:crosshair; user-select:none; background-repeat:no-repeat; background-position:center center; position:relative;">
+                 style="width:100%; height:100%; cursor:crosshair; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
                 <div id="grid-overlay"
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">
                 </div>
@@ -19,65 +24,250 @@
             </div>
         </div>
 
-        <!-- === SIDEBAR CONTROLES === -->
-        <div class="col-4 py-4 d-flex flex-column align-items-center overflow-auto">
-            <div style="width:90%;">
-
-                <h4 class="text-center mb-3">Painel de Controle</h4>
-
-                <!-- === GERAR SETORES === -->
-                <div class="card p-3 mb-4 shadow-sm">
-                    <h5 class="mb-3 text-center">Gerar Setores</h5>
-                    <div class="input-group mb-3">
-                        <input type="number" id="numSetores" class="form-control" placeholder="Qtd. de setores" min="1" max="10">
-                        <button id="btnGerar" class="btn btn-primary">Gerar</button>
-                    </div>
-                    <div class="text-center mt-2">
-                        <button id="btnResumo" class="btn btn-info btn-sm">📊 Detalhes do Estacionamento</button>
-                    </div>
-                    <small class="text-muted d-block text-center">Máx: 10 setores</small>
+        <!-- === PAINEL DE CONTROLE - COLUNA 4 === -->
+        <div class="col-4 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
+            <div class="control-panel h-100 d-flex flex-column p-4 overflow-auto">
+                
+                <!-- Cabeçalho -->
+                <div class="text-center mb-4">
+                    <h4 class="text-primary mb-2">Painel de Controle</h4>
+                    <p class="text-muted small">Gerencie os setores do estacionamento</p>
                 </div>
 
-                <!-- === LISTA DE SETORES === -->
-                <div id="setoresContainer" class="d-flex flex-wrap justify-content-center gap-2 mb-3"></div>
+                <!-- === CONTROLES DE VIEWPORT === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="text-center mb-3 text-secondary">
+                            <i class="fas fa-expand-alt me-2"></i>Controles da Visualização
+                        </h6>
+                        
+                        <!-- Controles de Zoom -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-2">Zoom</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button id="btnZoomOut" class="btn btn-outline-secondary flex-grow-1" title="Zoom Out">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom" style="min-width: 60px;">
+                                    100%
+                                </button>
+                                <button id="btnZoomIn" class="btn btn-outline-secondary flex-grow-1" title="Zoom In">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                <!-- === CONTROLES DE EDIÇÃO === -->
-                <div class="d-flex justify-content-center gap-2 mb-4">
-                    <button id="btnLimpar" class="btn btn-outline-danger btn-sm">🧹 Limpar Setores</button>
-                    <button id="btnBorracha" class="btn btn-outline-secondary btn-sm">🩹 Borracha</button>
-                </div>
+                        <!-- Controles de Navegação -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-2">Navegação</label>
+                            <div class="d-flex flex-column align-items-center">
+                                <button id="btnUp" class="btn btn-outline-secondary mb-1" title="Mover para Cima">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <div class="d-flex gap-1 w-100 justify-content-center">
+                                    <button id="btnLeft" class="btn btn-outline-secondary flex-grow-1" title="Mover para Esquerda">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <button id="btnCenter" class="btn btn-outline-primary" title="Centralizar">
+                                        <i class="fas fa-bullseye"></i>
+                                    </button>
+                                    <button id="btnRight" class="btn btn-outline-secondary flex-grow-1" title="Mover para Direita">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                                <button id="btnDown" class="btn btn-outline-secondary mt-1" title="Mover para Baixo">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                <!-- === SALVAR === -->
-                <div class="text-center mb-3">
-                    <button id="btnSalvar" class="btn btn-success">💾 Salvar Setores</button>
-                </div>
-
-                <!-- === RESUMO === -->
-                <div class="row mt-4" id="resumoContainer" style="display:none;">
-                    <div class="col-12">
-                        <div class="card p-3 shadow-sm">
-                            <h5 class="mb-3 text-center">Resumo do Estacionamento</h5>
-                            <table class="table table-striped table-bordered mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Setores</th>
-                                        <th>Total Grids</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="resumoBody"></tbody>
-                            </table>
+                        <!-- Tela Cheia -->
+                        <div class="text-center mt-3">
+                            <button id="btnFullscreen" class="btn btn-outline-success w-100" title="Tela Cheia">
+                                <i class="fas fa-expand me-2"></i>Tela Cheia
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="text-center mt-4">
-                    <a href="{{ route('dashboard') }}" class="btn btn-secondary">Voltar para Dashboard</a>
+                <!-- === GERAR SETORES === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">
+                            <i class="fas fa-layer-group me-2"></i>Gerar Setores
+                        </h5>
+                        <div class="input-group mb-3">
+                            <input type="number" id="numSetores" class="form-control border-primary" placeholder="Qtd. de setores" min="1" max="10">
+                            <button id="btnGerar" class="btn btn-primary">
+                                <i class="fas fa-magic me-1"></i>Gerar
+                            </button>
+                        </div>
+                        <small class="text-muted d-block text-center">
+                            <i class="fas fa-info-circle me-1"></i>Máximo: 10 setores
+                        </small>
+                    </div>
+                </div>
+
+                <!-- === LISTA DE SETORES === -->
+                <div class="mb-4">
+                    <h6 class="text-center mb-3 text-secondary">
+                        <i class="fas fa-palette me-2"></i>Setores Criados
+                    </h6>
+                    <div id="setoresContainer" class="d-flex flex-wrap justify-content-center gap-3"></div>
+                </div>
+
+                <!-- === CONTROLES DE EDIÇÃO === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="text-center mb-3 text-secondary">Ferramentas de Edição</h6>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button id="btnLimpar" class="btn btn-outline-danger btn-lg px-4 py-2">
+                                <i class="fas fa-broom me-2"></i>Limpar
+                            </button>
+                            <button id="btnBorracha" class="btn btn-outline-warning btn-lg px-4 py-2">
+                                <i class="fas fa-eraser me-2"></i>Borracha
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- === SALVAR === -->
+                <div class="mt-auto pt-4">
+                    <div class="text-center">
+                        <button id="btnSalvar" class="btn btn-success btn-lg w-100 py-3 shadow">
+                            <i class="fas fa-save me-2"></i>Salvar Setores
+                        </button>
+                    </div>
                 </div>
 
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal para Tela Cheia -->
+<div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content border-0">
+            <div class="modal-header border-0 bg-dark">
+                <h5 class="modal-title text-white">Visualização em Tela Cheia</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 bg-dark position-relative">
+                <div id="fullscreenViewer" 
+                     style="width:100%; height:100%; background-repeat:no-repeat; background-position:center center; background-size:contain;"></div>
+                <div id="fullscreenGrid" 
+                     style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Adicionar Font Awesome para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!-- Adicionar Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .btn {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    .card {
+        border-radius: 12px;
+        transition: transform 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    #setoresContainer div {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    #setoresContainer div:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .modal-fullscreen .modal-content {
+        border-radius: 0;
+    }
+    
+    #fullscreenViewer {
+        background-color: #000;
+    }
+    
+    /* Estilo para grid em tela cheia */
+    .grid-cell-fullscreen {
+        position: absolute;
+        border: 1px solid rgba(0,132,255,0.2);
+        background-color: transparent;
+        pointer-events: none;
+    }
+
+    /* Garantir que a imagem seja visível */
+    #viewer {
+        background-color: #f0f0f0;
+    }
+
+    /* Indicador de zoom discreto */
+    .zoom-indicator {
+        transition: all 0.3s ease;
+        opacity: 0.8;
+    }
+    
+    .zoom-indicator:hover {
+        opacity: 1;
+    }
+
+    /* Animação sutil para mudanças de zoom */
+    @keyframes zoomPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .zoom-pulse {
+        animation: zoomPulse 0.3s ease;
+    }
+
+    /* Ajustes para a estrutura Bootstrap */
+    .container-fluid {
+        height: 100vh;
+    }
+    
+    .row.g-0 {
+        margin-right: 0;
+        margin-left: 0;
+    }
+    
+    .row.g-0 > .col-8,
+    .row.g-0 > .col-4 {
+        padding-right: 0;
+        padding-left: 0;
+    }
+</style>
 
 <script>
 (function () {
@@ -86,12 +276,16 @@
     const viewer = document.getElementById('viewer');
     const gridOverlay = document.getElementById('grid-overlay');
     const selectionRect = document.getElementById('selection-rect');
+    const fullscreenViewer = document.getElementById('fullscreenViewer');
+    const fullscreenGrid = document.getElementById('fullscreenGrid');
+    const fullscreenModal = new bootstrap.Modal(document.getElementById('fullscreenModal'));
+    const zoomLevelElement = document.getElementById('zoomLevel');
 
     let imgNaturalW = 1, imgNaturalH = 1;
     let baseBgW = 0, baseBgH = 0;
     let scaleFactor = 1;
-    const MIN_SCALE = 1;
-    const MAX_SCALE = 6;
+    const MIN_SCALE = 0.3;
+    const MAX_SCALE = 8;
 
     let bgW = 0, bgH = 0;
     let posX = 0, posY = 0;
@@ -109,46 +303,104 @@
     let selectionStart = null;
     let currentSelection = null;
 
+    // === CARREGAR IMAGEM ===
     const img = new Image();
     img.src = imageUrl + '?v=' + Date.now();
-    img.onload = () => {
+    
+    img.onload = function() {
+        console.log('Imagem carregada:', img.src);
+        console.log('Dimensões naturais:', img.naturalWidth, 'x', img.naturalHeight);
+        
         imgNaturalW = img.naturalWidth;
         imgNaturalH = img.naturalHeight;
-        viewer.style.backgroundImage = `url(${img.src})`;
+        
+        // Definir a imagem de fundo
+        viewer.style.backgroundImage = `url('${img.src}')`;
+        fullscreenViewer.style.backgroundImage = `url('${img.src}')`;
+        
         initSizesAndPosition();
         createGrid();
+        setupFullscreenGrid();
     };
 
-    // === AJUSTES DE TAMANHO ===
+    img.onerror = function() {
+        console.error('Erro ao carregar imagem:', imageUrl);
+        alert('Erro ao carregar a imagem. Verifique o caminho: ' + imageUrl);
+    };
+
+    // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
     function initSizesAndPosition() {
         const cw = viewer.clientWidth;
         const ch = viewer.clientHeight;
-        const scale = Math.max(cw / imgNaturalW, ch / imgNaturalH);
-        baseBgW = imgNaturalW * scale;
-        baseBgH = imgNaturalH * scale;
-        scaleFactor = 1;
-        bgW = baseBgW;
-        bgH = baseBgH;
+        
+        console.log('Viewport dimensions:', cw, 'x', ch);
+        console.log('Image dimensions:', imgNaturalW, 'x', imgNaturalH);
+        
+        // Calcula escala para preencher a viewport (cover)
+        const scaleX = cw / imgNaturalW;
+        const scaleY = ch / imgNaturalH;
+        
+        // Usa a maior escala para preencher a viewport completamente
+        const initialScale = Math.max(scaleX, scaleY) * 1.0; // 100% do cover
+        
+        baseBgW = imgNaturalW;
+        baseBgH = imgNaturalH;
+        scaleFactor = initialScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        // Centraliza a imagem
         posX = (cw - bgW) / 2;
         posY = (ch - bgH) / 2;
+        
+        console.log('Initial scale:', scaleFactor);
+        console.log('Scaled dimensions:', bgW, 'x', bgH);
+        console.log('Position:', posX, posY);
+        
         applyTransform();
         updateGrid();
+        updateZoomIndicator();
     }
 
     function applyTransform() {
         viewer.style.backgroundSize = `${bgW}px ${bgH}px`;
         viewer.style.backgroundPosition = `${posX}px ${posY}px`;
-        gridOverlay.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
+        
+        // Aplica transformação no grid overlay
+        gridOverlay.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
         gridOverlay.style.transformOrigin = 'top left';
-        selectionRect.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
+        
+        // NÃO aplicar transform no selectionRect (vamos posicioná-lo em coordenadas de tela)
+        selectionRect.style.transform = 'none';
         selectionRect.style.transformOrigin = 'top left';
+
+        // Se houver seleção ativa, recalcula o retângulo visível para manter sincronização
+        if (isSelecting || currentSelection) {
+            updateSelectionRect();
+        }
+    }
+
+    function updateZoomIndicator() {
+        const percentage = Math.round(scaleFactor * 100);
+        zoomLevelElement.textContent = `${percentage}%`;
+        
+        // Adiciona animação sutil
+        zoomLevelElement.classList.add('zoom-pulse');
+        setTimeout(() => {
+            zoomLevelElement.classList.remove('zoom-pulse');
+        }, 300);
     }
 
     function clampPosition() {
         const cw = viewer.clientWidth;
         const ch = viewer.clientHeight;
-        posX = Math.min(0, Math.max(cw - bgW, posX));
-        posY = Math.min(0, Math.max(ch - bgH, posY));
+        
+        // Permite um pouco de overscroll para melhor UX
+        const marginX = cw * 0.1;
+        const marginY = ch * 0.1;
+        
+        posX = Math.min(marginX, Math.max(cw - bgW - marginX, posX));
+        posY = Math.min(marginY, Math.max(ch - bgH - marginY, posY));
     }
 
     // === ZOOM ===
@@ -156,25 +408,199 @@
         e.preventDefault();
         const zoomSpeed = 1.1;
         const delta = e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed;
-        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scaleFactor * delta));
+        zoomToPoint(delta, e.clientX, e.clientY);
+    });
 
+    function zoomToPoint(delta, clientX, clientY) {
+        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scaleFactor * delta));
+        
         const rect = viewer.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const mx = clientX - rect.left;
+        const my = clientY - rect.top;
+        
+        // Calcula a posição relativa antes do zoom
         const relX = (mx - posX) / bgW;
         const relY = (my - posY) / bgH;
 
-        bgW = baseBgW * newScale;
-        bgH = baseBgH * newScale;
+        // Aplica o zoom
         scaleFactor = newScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
 
+        // Ajusta a posição para manter o ponto sob o mouse
         posX = mx - relX * bgW;
         posY = my - relY * bgH;
 
         clampPosition();
         applyTransform();
         updateGrid();
+        updateZoomIndicator();
+    }
+
+    // === CONTROLES DE ZOOM ===
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
     });
+
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1/1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    document.getElementById('btnZoomReset').addEventListener('click', () => {
+        // Reset para 100% (escala natural)
+        scaleFactor = 1;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        posX = (cw - bgW) / 2;
+        posY = (ch - bgH) / 2;
+        
+        clampPosition();
+        applyTransform();
+        updateGrid();
+        updateZoomIndicator();
+    });
+
+    // === CONTROLES DE NAVEGAÇÃO ===
+    document.getElementById('btnUp').addEventListener('click', () => {
+        posY += 50;
+        clampPosition();
+        applyTransform();
+    });
+
+    document.getElementById('btnDown').addEventListener('click', () => {
+        posY -= 50;
+        clampPosition();
+        applyTransform();
+    });
+
+    document.getElementById('btnLeft').addEventListener('click', () => {
+        posX += 50;
+        clampPosition();
+        applyTransform();
+    });
+
+    document.getElementById('btnRight').addEventListener('click', () => {
+        posX -= 50;
+        clampPosition();
+        applyTransform();
+    });
+
+    document.getElementById('btnCenter').addEventListener('click', () => {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        posX = (cw - bgW) / 2;
+        posY = (ch - bgH) / 2;
+        clampPosition();
+        applyTransform();
+    });
+
+    // === TELA CHEIA ===
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+        fullscreenModal.show();
+        // Wait for modal transition to complete
+        setTimeout(() => {
+            setupFullscreenGrid();
+        }, 300);
+    });
+
+    function calculateFullscreenDimensions() {
+        const containerW = fullscreenViewer.clientWidth;
+        const containerH = fullscreenViewer.clientHeight;
+        
+        // Calculate scale to fit (contain)
+        const scaleX = containerW / imgNaturalW;
+        const scaleY = containerH / imgNaturalH;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate actual dimensions
+        const actualWidth = imgNaturalW * scale;
+        const actualHeight = imgNaturalH * scale;
+        
+        // Calculate centering offsets
+        const offsetX = (containerW - actualWidth) / 2;
+        const offsetY = (containerH - actualHeight) / 2;
+        
+        return { scale, actualWidth, actualHeight, offsetX, offsetY };
+    }
+
+    function setupFullscreenGrid() {
+        const { scale, actualWidth, actualHeight, offsetX, offsetY } = calculateFullscreenDimensions();
+        
+        // Clear existing grid
+        fullscreenGrid.innerHTML = '';
+        
+        // Calculate cell dimensions based on actual image size
+        const cellW = actualWidth / cols;
+        const cellH = actualHeight / rows;
+        
+        // Create grid cells with correct positioning
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell-fullscreen';
+                
+                // Position relative to centered image
+                const left = offsetX + (c * cellW);
+                const top = offsetY + (r * cellH);
+                
+                Object.assign(cell.style, {
+                    width: `${cellW}px`,
+                    height: `${cellH}px`,
+                    left: `${left}px`,
+                    top: `${top}px`,
+                    border: '1px solid rgba(0,132,255,0.2)',
+                    position: 'absolute'
+                });
+                
+                // Apply sector color if exists
+                if (gridData[r][c]) {
+                    cell.style.backgroundColor = getSectorColorByName(gridData[r][c]);
+                }
+                
+                fullscreenGrid.appendChild(cell);
+            }
+        }
+        
+        // Update fullscreen viewer background size
+        fullscreenViewer.style.backgroundSize = 'contain';
+        fullscreenViewer.style.backgroundPosition = 'center center';
+    }
+
+    // Add resize handler for fullscreen mode
+    window.addEventListener('resize', () => {
+        if (fullscreenModal._element.classList.contains('show')) {
+            setupFullscreenGrid();
+        }
+    });
+
+    // Update the updateFullscreenGrid function
+    function updateFullscreenGrid() {
+        if (!fullscreenModal._element.classList.contains('show')) return;
+        
+        const cells = fullscreenGrid.querySelectorAll('.grid-cell-fullscreen');
+        cells.forEach((cell, index) => {
+            const r = Math.floor(index / cols);
+            const c = index % cols;
+            
+            if (gridData[r][c]) {
+                const color = getSectorColorByName(gridData[r][c]);
+                cell.style.backgroundColor = color;
+            } else {
+                cell.style.backgroundColor = 'transparent';
+            }
+        });
+    }
+
+    function getSectorColorByName(sectorName) {
+        const sectorCard = Array.from(document.querySelectorAll('#setoresContainer div'))
+            .find(card => card.textContent === sectorName);
+        return sectorCard ? sectorCard.style.backgroundColor : 'rgba(0,0,0,0.5)';
+    }
 
     // === ARRASTAR (MIDDLE MOUSE) ===
     viewer.addEventListener('mousedown', e => {
@@ -197,21 +623,12 @@
             clampPosition();
             applyTransform();
         }
-        
-        // Seleção com left mouse button
-        if (isSelecting) {
-            handleSelectionMove(e);
-        }
     });
 
     window.addEventListener('mouseup', e => {
         if (e.button === 1 && dragging) {
             dragging = false;
             viewer.style.cursor = 'crosshair';
-        }
-        
-        if (e.button === 0 && isSelecting) {
-            handleSelectionEnd(e);
         }
     });
 
@@ -243,9 +660,12 @@
     function updateGrid() {
         const cellW = baseBgW / cols;
         const cellH = baseBgH / rows;
-        for (const cell of gridOverlay.children) {
-            const r = +cell.dataset.row;
-            const c = +cell.dataset.col;
+        const cells = gridOverlay.children;
+        
+        for (let i = 0; i < cells.length; i++) {
+            const cell = cells[i];
+            const r = parseInt(cell.dataset.row);
+            const c = parseInt(cell.dataset.col);
             cell.style.width = `${cellW}px`;
             cell.style.height = `${cellH}px`;
             cell.style.left = `${c * cellW}px`;
@@ -253,7 +673,7 @@
         }
     }
 
-    // === SELEÇÃO ESTILO EXCEL ===
+    // === SELEÇÃO ESTILO EXCEL - CÁLCULO CORRIGIDO ===
     function handleSelectionStart(e) {
         if (e.button !== 0 || (!activeSector && !eraserMode)) return;
         
@@ -278,41 +698,41 @@
         
         // Previne seleção de texto durante o drag
         viewer.style.userSelect = 'none';
+        
+        // Adiciona event listeners para movimento e fim
+        document.addEventListener('mousemove', handleSelectionMove);
+        document.addEventListener('mouseup', handleSelectionEnd);
     }
 
     function handleSelectionMove(e) {
         if (!isSelecting) return;
         
-        const cell = e.target.closest('.grid-cell');
-        if (cell) {
-            const row = parseInt(cell.dataset.row);
-            const col = parseInt(cell.dataset.col);
-            
-            // Atualiza apenas se mudou de célula
-            if (currentSelection.endRow !== row || currentSelection.endCol !== col) {
-                currentSelection.endRow = row;
-                currentSelection.endCol = col;
-                updateSelectionRect();
-            }
-        } else {
-            // Se não está sobre uma célula, calcula baseado na posição do mouse
-            const rect = gridOverlay.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            const cellW = baseBgW / cols;
-            const cellH = baseBgH / rows;
-            
-            const col = Math.floor(mouseX / cellW);
-            const row = Math.floor(mouseY / cellH);
-            
-            if (col >= 0 && col < cols && row >= 0 && row < rows) {
-                if (currentSelection.endRow !== row || currentSelection.endCol !== col) {
-                    currentSelection.endRow = row;
-                    currentSelection.endCol = col;
-                    updateSelectionRect();
-                }
-            }
+        // Obtém a posição do grid overlay no viewport
+        const gridRect = gridOverlay.getBoundingClientRect();
+        
+        // Calcula as coordenadas do mouse RELATIVAS ao grid overlay
+        const mouseX = e.clientX - gridRect.left;
+        const mouseY = e.clientY - gridRect.top;
+        
+        // Tamanho base das células (sem zoom)
+        const baseCellW = baseBgW / cols;
+        const baseCellH = baseBgH / rows;
+        
+        // Calcula a posição no grid
+        const gridX = mouseX / scaleFactor;
+        const gridY = mouseY / scaleFactor;
+        
+        const col = Math.floor(gridX / baseCellW);
+        const row = Math.floor(gridY / baseCellH);
+        
+        // Limita às dimensões do grid
+        const boundedCol = Math.max(0, Math.min(cols - 1, col));
+        const boundedRow = Math.max(0, Math.min(rows - 1, row));
+        
+        if (currentSelection.endRow !== boundedRow || currentSelection.endCol !== boundedCol) {
+            currentSelection.endRow = boundedRow;
+            currentSelection.endCol = boundedCol;
+            updateSelectionRect();
         }
     }
 
@@ -323,6 +743,10 @@
         selectionRect.style.display = 'none';
         viewer.style.userSelect = 'auto';
         
+        // Remove event listeners
+        document.removeEventListener('mousemove', handleSelectionMove);
+        document.removeEventListener('mouseup', handleSelectionEnd);
+        
         // Aplica a cor aos cells selecionados
         applyColorToSelection();
         
@@ -331,8 +755,12 @@
     }
 
     function updateSelectionRect() {
-        if (!currentSelection) return;
+        if (!currentSelection) {
+            selectionRect.style.display = 'none';
+            return;
+        }
         
+        // base cell size (não escalado)
         const cellW = baseBgW / cols;
         const cellH = baseBgH / rows;
         
@@ -346,11 +774,19 @@
         const width = (endCol - startCol + 1) * cellW;
         const height = (endRow - startRow + 1) * cellH;
         
-        // Aplica a mesma transformação do grid overlay
-        selectionRect.style.left = `${left}px`;
-        selectionRect.style.top = `${top}px`;
-        selectionRect.style.width = `${width}px`;
-        selectionRect.style.height = `${height}px`;
+        // Calcular valores em coordenadas de tela (considera scaleFactor e deslocamento posX/posY)
+        const scaledLeft = posX + left * scaleFactor;
+        const scaledTop = posY + top * scaleFactor;
+        const scaledWidth = width * scaleFactor;
+        const scaledHeight = height * scaleFactor;
+        
+        // Aplicar diretamente valores escalados e garantir que transform não interfira
+        selectionRect.style.display = 'block';
+        selectionRect.style.transform = 'none';
+        selectionRect.style.left = `${scaledLeft}px`;
+        selectionRect.style.top = `${scaledTop}px`;
+        selectionRect.style.width = `${scaledWidth}px`;
+        selectionRect.style.height = `${scaledHeight}px`;
     }
 
     function applyColorToSelection() {
@@ -373,6 +809,11 @@
                     if (cell) cell.style.backgroundColor = activeSector.color;
                 }
             }
+        }
+        
+        // Atualiza o grid em tela cheia se estiver visível
+        if (fullscreenModal._element.classList.contains('show')) {
+            updateFullscreenGrid();
         }
     }
 
@@ -401,7 +842,7 @@
 
         for(let i=0;i<num;i++){
             const card=document.createElement('div');
-            card.classList.add('p-3','rounded','text-center','text-white');
+            card.classList.add('p-3','rounded','text-center','text-white','shadow-sm');
             Object.assign(card.style,{
                 width:'80px',height:'80px',backgroundColor:cores[i],
                 display:'flex',justifyContent:'center',alignItems:'center',cursor:'pointer'
@@ -412,16 +853,21 @@
                 if(activeSector && activeSector.name===setorName){
                     activeSector=null;
                     card.style.outline='';
+                    card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                 } else {
                     activeSector={
                         name: setorName,
                         color: cores[i]
                     };
                     eraserMode=false;
-                    document.querySelectorAll('#setoresContainer div').forEach(c=>c.style.outline='');
+                    document.querySelectorAll('#setoresContainer div').forEach(c=>{
+                        c.style.outline='';
+                        c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    });
                     card.style.outline='3px solid #000';
-                    document.getElementById('btnBorracha').classList.remove('btn-secondary');
-                    document.getElementById('btnBorracha').classList.add('btn-outline-secondary');
+                    card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                    document.getElementById('btnBorracha').classList.remove('btn-warning');
+                    document.getElementById('btnBorracha').classList.add('btn-outline-warning');
                 }
             });
             setoresContainer.appendChild(card);
@@ -432,17 +878,25 @@
     document.getElementById('btnLimpar').addEventListener('click', ()=>{
         gridOverlay.querySelectorAll('.grid-cell').forEach(cell=>cell.style.backgroundColor='transparent');
         for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) gridData[r][c]=null;
+        
+        // Atualiza o grid em tela cheia se estiver visível
+        if (fullscreenModal._element.classList.contains('show')) {
+            updateFullscreenGrid();
+        }
     });
 
     document.getElementById('btnBorracha').addEventListener('click', ()=>{
         eraserMode=!eraserMode;
         activeSector = null;
         const btn=document.getElementById('btnBorracha');
-        btn.classList.toggle('btn-secondary',eraserMode);
-        btn.classList.toggle('btn-outline-secondary',!eraserMode);
+        btn.classList.toggle('btn-warning',eraserMode);
+        btn.classList.toggle('btn-outline-warning',!eraserMode);
         
         // Remove outline dos setores
-        document.querySelectorAll('#setoresContainer div').forEach(c=>c.style.outline='');
+        document.querySelectorAll('#setoresContainer div').forEach(c=>{
+            c.style.outline='';
+            c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        });
     });
 
     // === SALVAR ===
@@ -522,31 +976,14 @@
         return 'rgba(0,0,0,0.5)';
     }
 
-    // === RESUMO ===
-    const btnResumo=document.getElementById('btnResumo');
-    const resumoBody=document.getElementById('resumoBody');
-    const resumoContainer=document.getElementById('resumoContainer');
+    // === REDIMENSIONAMENTO DA JANELA ===
+    window.addEventListener('resize', () => {
+        initSizesAndPosition();
+    });
 
-    btnResumo.addEventListener('click', ()=>{
-        resumoBody.innerHTML='';
-        const setoresMap={};
-        for(let r=0;r<gridData.length;r++){
-            for(let c=0;c<gridData[0].length;c++){
-                const setor=gridData[r][c];
-                if(!setor) continue;
-                if(!setoresMap[setor]) setoresMap[setor]=0;
-                setoresMap[setor]++;
-            }
-        }
-        
-        if (Object.keys(setoresMap).length === 0) {
-            resumoBody.innerHTML = '<tr><td colspan="2" class="text-center">Nenhum setor definido</td></tr>';
-        } else {
-            for(const setor in setoresMap){
-                resumoBody.innerHTML+=`<tr><td>${setor}</td><td>${setoresMap[setor]}</td></tr>`;
-            }
-        }
-        resumoContainer.style.display='block';
+    // Inicialização quando o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM carregado, iniciando aplicação...');
     });
 
 })();
