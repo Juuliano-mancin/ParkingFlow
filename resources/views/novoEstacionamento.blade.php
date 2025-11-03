@@ -59,7 +59,7 @@
             <!-- Nome do Projeto -->
             <div class="mb-4">
                 <label for="nomeProjeto" class="form-label">Nome do Projeto:</label>
-                <input type="text" name="nomeProjeto" id="nomeProjeto" class="form-control" required>
+                <input type="text" name="nomeProjeto" id="nomeProjeto" class="form-control somente-letras" required>
             </div>
 
             <!-- Upload da Planta Baixa -->
@@ -84,6 +84,12 @@
         var selected = this.value;
         // Aqui você pode mostrar outros campos dinamicamente se quiser
         // Mas o select já está dentro do form, então idCliente será enviado
+    });
+
+    document.querySelectorAll('.somente-letras').forEach(function(campo) {
+        campo.addEventListener('input', function () {
+            this.value = this.value.replace(/[0-9]/g, '');
+        });
     });
 </script>
 @endsection

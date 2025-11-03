@@ -34,13 +34,13 @@
 <div class="row d-flex">
     <div class="col-md-6 mb-3">
         <label for="nomeCliente" class="form-label">Nome Fantasia</label>
-        <input type="text" name="nomeCliente" id="nomeCliente" class="form-control" 
+        <input type="text" name="nomeCliente" id="nomeCliente" class="form-control somente-letras" 
             value="{{ old('nomeCliente', $cliente->nomeCliente ?? '') }}" required>
     </div>
 
     <div class="col-md-6 mb-3">
         <label for="razaoSocial" class="form-label">Razão Social</label>
-        <input type="text" name="razaoSocial" id="razaoSocial" class="form-control" 
+        <input type="text" name="razaoSocial" id="razaoSocial" class="form-control somente-letras" 
             value="{{ old('razaoSocial', $cliente->razaoSocial ?? '') }}" required>
     </div>
 </div>
@@ -71,7 +71,7 @@
 <div class="row d-flex">
     <div class="col-md-4 mb-3">
         <label for="representanteCliente" class="form-label">Representante Cliente</label>
-        <input type="text" name="representanteCliente" id="representanteCliente" class="form-control"
+        <input type="text" name="representanteCliente" id="representanteCliente" class="form-control somente-letras"
             value="{{ old('representanteCliente', $cliente->representanteCliente ?? '') }}" required>
     </div>
 
@@ -83,7 +83,7 @@
 
     <div class="col-md-4 mb-3">
         <label for="contatoCliente" class="form-label">Contato Representante</label>
-        <input type="text" name="contatoCliente" id="contatoCliente" class="form-control"
+        <input type="text" name="contatoCliente" id="contatoCliente" class="form-control somente-numeros"
             value="{{ old('contatoCliente', $cliente->contatoCliente ?? '') }}">
     </div>
 </div>
@@ -91,7 +91,7 @@
 <div class="row d-flex">
     <div class="col-md-4 mb-3">
         <label for="cepCliente" class="form-label">CEP</label>
-        <input type="text" name="cepCliente" id="cepCliente" class="form-control"
+        <input type="text" name="cepCliente" id="cepCliente" class="form-control somente-numeros" maxlength="8"
             value="{{ old('cepCliente', $cliente->cepCliente ?? '') }}">
     </div>
 
@@ -103,7 +103,7 @@
 
     <div class="col-md-4 mb-3">
         <label for="numeroCliente" class="form-label">Número</label>
-        <input type="text" name="numeroCliente" id="numeroCliente" class="form-control"
+        <input type="text" name="numeroCliente" id="numeroCliente" class="form-control somente-numeros"
             value="{{ old('numeroCliente', $cliente->numeroCliente ?? '') }}">
     </div>
 </div>
@@ -111,19 +111,19 @@
 <div class="row d-flex">
     <div class="col-md-4 mb-3">
         <label for="complementoCliente" class="form-label">Complemento</label>
-        <input type="text" name="complementoCliente" id="complementoCliente" class="form-control"
+        <input type="text" name="complementoCliente" id="complementoCliente" class="form-control somente-letras"
             value="{{ old('complementoCliente', $cliente->complementoCliente ?? '') }}">
     </div>
 
     <div class="col-md-4 mb-3">
         <label for="cidadeCliente" class="form-label">Cidade</label>
-        <input type="text" name="cidadeCliente" id="cidadeCliente" class="form-control"
+        <input type="text" name="cidadeCliente" id="cidadeCliente" class="form-control somente-letras"
             value="{{ old('cidadeCliente', $cliente->cidadeCliente ?? '') }}">
     </div>
 
     <div class="col-md-4 mb-2">
         <label for="ufCliente" class="form-label">UF</label>
-        <input type="text" name="ufCliente" id="ufCliente" class="form-control" maxlength="2"
+        <input type="text" name="ufCliente" id="ufCliente" class="form-control somente-letras" maxlength="2"
             value="{{ old('ufCliente', $cliente->ufCliente ?? '') }}">
     </div>
 </div>
@@ -160,5 +160,17 @@ document.getElementById('cepCliente').addEventListener('input', function () {
                 });
         }, 300); // pequeno atraso para não disparar múltiplas vezes
     }
+});
+
+document.querySelectorAll('.somente-letras').forEach(function(campo) {
+    campo.addEventListener('input', function () {
+        this.value = this.value.replace(/[0-9]/g, '');
+    });
+});
+
+document.querySelectorAll('.somente-numeros').forEach(function(campo) {
+    campo.addEventListener('input', function () {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
 });
 </script>

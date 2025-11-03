@@ -28,12 +28,19 @@
         a, h1 {
             text-shadow: 1px 4px 5px rgba(51, 51, 51, 0.3);
         }
+        @media (max-width: 515px) {
+            .title-container {
+                justify-content: center !important; /* centraliza no flex */
+                text-align: center;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
 <body>
    
-    <header class="bg-light py-3 mb-4">
+    <header class="bg-light py-3 mb-4 shadow">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <!-- Botão temporario de voltar -->
@@ -44,17 +51,24 @@
                 @endif
 
                 <!-- Título à esquerda -->
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center title-container">
                     <h1 class="h5 m-0">Estacionamento Inteligente</h1>
                 </div>
 
                 <!-- Mensagem de boas-vindas centralizada (apenas no dashboard) -->
                 @if (Request::is('dashboard'))
-                <div class="position-absolute start-50 translate-middle-x">
-                    @auth 
-                    <h1 class="h6 m-0">Bem-vindo(a), {{ Auth::user()->name }}!</h1>
-                    @endauth
-                </div>
+                    <div class="position-absolute start-50 translate-middle-x d-none d-lg-block">
+                        @auth 
+                        <h1 class="h6 m-0">Bem-vindo(a), {{ Auth::user()->name }}!</h1>
+                        @endauth
+                    </div>
+                    <div class="d-flex align-items-center gap-3 ms-auto me-4">
+                        <a href="{{ route('painel.disponibilidade') }}"
+                        class="d-flex gap-2 align-items-center text-decoration-none text-dark">
+                            <h6 class="m-0">Painel</h6>
+                            <img src="{{ asset('lupa.png') }}" alt="Painel de Disponibilidade" class="img-fluid-1" style="width:30px; cursor:pointer;">
+                        </a>
+                    </div>
                 @endif
                 
                 <!-- Botão de sair à direita -->
