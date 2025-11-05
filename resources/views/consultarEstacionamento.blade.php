@@ -3,26 +3,47 @@
 @section('title', 'Consultar Estacionamento')
 
 @section('content')
-<div class="container-fluid p-0" style="height:100vh;">
-    <div class="row h-100">
+<div class="container-fluid p-0 vh-100">
+    <div class="row g-0 h-100">
 
-        <!-- VIEWPORT -->
-        <div class="col-9 d-flex justify-content-center align-items-center"
-             style="background-color:#f8f9fa; border-right:1px solid #ddd; overflow:hidden; position:relative;">
+        <!-- === VIEWPORT PRINCIPAL - COLUNA 9 === -->
+        <div class="col-9 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
             
+            <!-- Indicador de Zoom -->
+            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
+                <span id="zoomLevel">100%</span>
+            </div>
+
             <!-- CONTROLES DE VISUALIZAÇÃO -->
             <div class="position-absolute top-0 start-0 m-3 z-3">
                 <div class="btn-group shadow-sm">
                     <button id="toggleSetores" class="btn btn-primary active">
-                        <i class="fas fa-layer-group"></i> Setores
+                        <i class="fas fa-layer-group me-2"></i> Setores
                     </button>
                     <button id="toggleVagas" class="btn btn-success active">
-                        <i class="fas fa-car"></i> Vagas
+                        <i class="fas fa-car me-2"></i> Vagas
                     </button>
                 </div>
             </div>
 
-            <div id="viewer" style="width:100%; height:100%; background-repeat:no-repeat; background-position:center center; position:relative;">
+            <!-- CONTROLES DE NAVEGAÇÃO -->
+            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 z-3">
+                <div class="btn-group shadow-sm">
+                    <button id="btnZoomOut" class="btn btn-outline-secondary" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom">
+                        100%
+                    </button>
+                    <button id="btnZoomIn" class="btn btn-outline-secondary" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="viewer" 
+                 style="width:100%; height:100%; cursor:crosshair; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
+                
                 <!-- Camada de Setores (fundo) -->
                 <div id="setores-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
                 
@@ -31,51 +52,114 @@
             </div>
         </div>
 
-        <!-- SIDEBAR -->
-        <div class="col-3 py-4 d-flex flex-column align-items-center overflow-auto"
-             style="background-color:#fff; position:relative;">
+        <!-- === PAINEL DE CONTROLE - COLUNA 3 === -->
+        <div class="col-3 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
+            <div class="control-panel h-100 d-flex flex-column p-4 overflow-auto">
+                
+                <!-- Cabeçalho -->
+                <div class="text-center mb-4">
+                    <h4 class="text-primary mb-2">Consulta do Estacionamento</h4>
+                    <p class="text-muted small">Visualize setores e vagas cadastradas</p>
+                </div>
 
-            <!-- PROJECT SELECT -->
-            <div class="card p-3 mb-3 shadow-sm" style="width:90%;">
-                <label for="selectProjeto" class="form-label">Projeto</label>
-                <select id="selectProjeto" class="form-select">
-                    @foreach($projetos as $p)
-                        <option value="{{ $p->idProjeto }}"
-                                data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
-                                {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
-                            {{ $p->nomeProjeto }}
-                        </option>
-                    @endforeach
-                </select>
+                <!-- === SELEÇÃO DE PROJETO === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">
+                            <i class="fas fa-project-diagram me-2"></i>Selecionar Projeto
+                        </h5>
+                        <label for="selectProjeto" class="form-label small text-muted">Projeto</label>
+                        <select id="selectProjeto" class="form-select border-primary">
+                            @foreach($projetos as $p)
+                                <option value="{{ $p->idProjeto }}"
+                                        data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
+                                        {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
+                                    {{ $p->nomeProjeto }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- === LEGENDA DOS SETORES === -->
+                <div class="card border-0 shadow-sm mb-4" id="legendaSetoresCard" style="display:none;">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">
+                            <i class="fas fa-layer-group me-2"></i>Legenda dos Setores
+                        </h5>
+                        <div id="legendaSetores" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                    </div>
+                </div>
+
+                <!-- === LEGENDA DOS TIPOS DE VAGA === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">
+                            <i class="fas fa-tags me-2"></i>Tipos de Vaga
+                        </h5>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(0,123,255,0.6); border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Carro</div>
+                                <i class="fas fa-car text-primary"></i>
+                            </div>
+                            <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Moto</div>
+                                <i class="fas fa-motorcycle text-success"></i>
+                            </div>
+                            <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.6); border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Idoso</div>
+                                <i class="fas fa-user-friends text-warning"></i>
+                            </div>
+                            <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(108,117,125,0.6); border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Deficiente</div>
+                                <i class="fas fa-wheelchair text-secondary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- === TELA CHEIA === -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <button id="btnFullscreen" class="btn btn-outline-success w-100" title="Tela Cheia">
+                            <i class="fas fa-expand me-2"></i>Visualização em Tela Cheia
+                        </button>
+                    </div>
+                </div>
+
+                <!-- === VOLTAR === -->
+                <div class="mt-auto pt-4">
+                    <div class="text-center">
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100 py-3">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar para Dashboard
+                        </a>
+                    </div>
+                </div>
+
             </div>
+        </div>
+    </div>
+</div>
 
-            <h4 class="w-100 text-center mb-2">Legenda dos Setores</h4>
-            <div id="legendaSetoresCard" class="card p-3 mb-3 shadow-sm" style="width:90%; display:none;">
-                <div id="legendaSetores" class="d-flex flex-wrap gap-2 justify-content-center"></div>
+<!-- Modal para Tela Cheia -->
+<div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content border-0">
+            <div class="modal-header border-0 bg-dark">
+                <h5 class="modal-title text-white">Visualização em Tela Cheia - Consulta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <h4 class="w-100 text-center mb-2">Vagas por Tipo</h4>
-            <div class="w-100 d-flex flex-column align-items-center mb-4" style="width:90%;">
-                <div class="d-flex align-items-center" style="width:100%;">
-                    <div class="vaga-indicador carro" style="width:20px; height:20px; background-color:rgba(0,123,255,0.6); border-radius:3px; margin-right:10px;"></div>
-                    <div class="vaga-label" style="font-size:14px; color:#333;">Carro</div>
-                </div>
-                <div class="d-flex align-items-center" style="width:100%;">
-                    <div class="vaga-indicador moto" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border-radius:3px; margin-right:10px;"></div>
-                    <div class="vaga-label" style="font-size:14px; color:#333;">Moto</div>
-                </div>
-                <div class="d-flex align-items-center" style="width:100%;">
-                    <div class="vaga-indicador idoso" style="width:20px; height:20px; background-color:rgba(255,193,7,0.6); border-radius:3px; margin-right:10px;"></div>
-                    <div class="vaga-label" style="font-size:14px; color:#333;">Idoso</div>
-                </div>
-                <div class="d-flex align-items-center" style="width:100%;">
-                    <div class="vaga-indicador deficiente" style="width:20px; height:20px; background-color:rgba(108,117,125,0.6); border-radius:3px; margin-right:10px;"></div>
-                    <div class="vaga-label" style="font-size:14px; color:#333;">Deficiente</div>
-                </div>
-            </div>
-
-            <div class="text-center mt-4" style="width:90%;">
-                <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100">Voltar para Dashboard</a>
+            <div class="modal-body p-0 bg-dark position-relative">
+                <div id="fullscreenViewer" 
+                     style="width:100%; height:100%; background-repeat:no-repeat; background-position:center center; background-size:contain;"></div>
+                <div id="fullscreenSetores" 
+                     style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+                <div id="fullscreenVagas" 
+                     style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
             </div>
         </div>
     </div>
@@ -97,6 +181,130 @@
     </symbol>
 </svg>
 
+<!-- Adicionar Font Awesome para ícones -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!-- Adicionar Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .btn {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    .card {
+        border-radius: 12px;
+        transition: transform 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .modal-fullscreen .modal-content {
+        border-radius: 0;
+    }
+    
+    #fullscreenViewer {
+        background-color: #000;
+    }
+    
+    /* Estilo para grid em tela cheia */
+    .grid-cell-fullscreen {
+        position: absolute;
+        border: 1px solid rgba(0,132,255,0.2);
+        background-color: transparent;
+        pointer-events: none;
+    }
+
+    /* Indicador de zoom discreto */
+    .zoom-indicator {
+        transition: all 0.3s ease;
+        opacity: 0.8;
+    }
+    
+    .zoom-indicator:hover {
+        opacity: 1;
+    }
+
+    /* Animação sutil para mudanças de zoom */
+    @keyframes zoomPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .zoom-pulse {
+        animation: zoomPulse 0.3s ease;
+    }
+
+    /* Ajustes para a estrutura Bootstrap */
+    .container-fluid {
+        height: 100vh;
+    }
+    
+    .row.g-0 {
+        margin-right: 0;
+        margin-left: 0;
+    }
+    
+    .row.g-0 > .col-9,
+    .row.g-0 > .col-3 {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .grid-cell { 
+        transition: background-color .06s linear; 
+    }
+    
+    .vaga-icon { 
+        transition: all 0.2s ease; 
+    }
+    
+    .vaga-icon:hover { 
+        transform: scale(1.1); 
+    }
+    
+    .vaga-border { 
+        transition: all 0.2s ease; 
+    }
+    
+    .btn-group .btn { 
+        border-radius: 0.375rem !important; 
+        margin: 0 2px; 
+    }
+
+    /* Melhorias para legibilidade */
+    .vaga-indicador {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .legenda-item {
+        transition: all 0.3s ease;
+    }
+    
+    .legenda-item:hover {
+        transform: translateX(5px);
+        background-color: rgba(0,123,255,0.05) !important;
+    }
+</style>
+
 <script>
 (async function(){
     // projetos vindo do controller
@@ -116,10 +324,17 @@
     const vagasLayer = document.getElementById('vagas-layer');
     const legendCard = document.getElementById('legendaSetoresCard');
     const legendContainer = document.getElementById('legendaSetores');
+    const fullscreenViewer = document.getElementById('fullscreenViewer');
+    const fullscreenSetores = document.getElementById('fullscreenSetores');
+    const fullscreenVagas = document.getElementById('fullscreenVagas');
+    const fullscreenModal = new bootstrap.Modal(document.getElementById('fullscreenModal'));
+    const zoomLevelElement = document.getElementById('zoomLevel');
 
     let imgNaturalW = 1, imgNaturalH = 1;
     let baseBgW = 0, baseBgH = 0;
     let bgW = 0, bgH = 0, posX = 0, posY = 0, scaleFactor = 1;
+    const MIN_SCALE = 0.5;
+    const MAX_SCALE = 5;
     const rows = 80, cols = 80;
     const tipoColors = { 
         carro: 'rgba(0,123,255,0.6)', 
@@ -141,7 +356,285 @@
     let showSetores = true;
     let showVagas = true;
 
-    // Inicializar controles
+    // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
+    function initSizesAndPosition() {
+        const containerW = viewer.clientWidth;
+        const containerH = viewer.clientHeight;
+        
+        // Calcula escala para preencher a viewport (cover)
+        const scaleX = containerW / imgNaturalW;
+        const scaleY = containerH / imgNaturalH;
+        
+        // Usa a maior escala para preencher a viewport completamente
+        const initialScale = Math.max(scaleX, scaleY) * 1.0;
+        
+        baseBgW = imgNaturalW;
+        baseBgH = imgNaturalH;
+        scaleFactor = initialScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        // Centraliza a imagem
+        posX = (containerW - bgW) / 2;
+        posY = (containerH - bgH) / 2;
+        
+        applyTransform();
+        updateGrid();
+        updateZoomIndicator();
+        renderVagas();
+    }
+
+    function applyTransform() {
+        viewer.style.backgroundSize = `${bgW}px ${bgH}px`;
+        viewer.style.backgroundPosition = `${posX}px ${posY}px`;
+        
+        // Aplica transformação nas layers
+        setoresLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
+        setoresLayer.style.transformOrigin = 'top left';
+        vagasLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
+        vagasLayer.style.transformOrigin = 'top left';
+    }
+
+    function updateZoomIndicator() {
+        const percentage = Math.round(scaleFactor * 100);
+        zoomLevelElement.textContent = `${percentage}%`;
+        
+        // Adiciona animação sutil
+        zoomLevelElement.classList.add('zoom-pulse');
+        setTimeout(() => {
+            zoomLevelElement.classList.remove('zoom-pulse');
+        }, 300);
+    }
+
+    function clampPosition() {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        
+        // Permite um pouco de overscroll para melhor UX
+        const marginX = cw * 0.1;
+        const marginY = ch * 0.1;
+        
+        posX = Math.min(marginX, Math.max(cw - bgW - marginX, posX));
+        posY = Math.min(marginY, Math.max(ch - bgH - marginY, posY));
+    }
+
+    // === ZOOM ===
+    viewer.addEventListener('wheel', e => {
+        e.preventDefault();
+        const zoomSpeed = 1.12;
+        const delta = e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed;
+        zoomToPoint(delta, e.clientX, e.clientY);
+    });
+
+    function zoomToPoint(delta, clientX, clientY) {
+        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scaleFactor * delta));
+        
+        const rect = viewer.getBoundingClientRect();
+        const mx = clientX - rect.left;
+        const my = clientY - rect.top;
+        
+        // Calcula a posição relativa antes do zoom
+        const relX = (mx - posX) / bgW;
+        const relY = (my - posY) / bgH;
+
+        // Aplica o zoom
+        scaleFactor = newScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+
+        // Ajusta a posição para manter o ponto sob o mouse
+        posX = mx - relX * bgW;
+        posY = my - relY * bgH;
+
+        clampPosition();
+        applyTransform();
+        updateGrid();
+        updateZoomIndicator();
+        renderVagas();
+    }
+
+    // === CONTROLES DE ZOOM ===
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1/1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    document.getElementById('btnZoomReset').addEventListener('click', () => {
+        // Reset para 100% (escala natural)
+        scaleFactor = 1;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        posX = (cw - bgW) / 2;
+        posY = (ch - bgH) / 2;
+        
+        clampPosition();
+        applyTransform();
+        updateGrid();
+        updateZoomIndicator();
+        renderVagas();
+    });
+
+    // === TELA CHEIA ===
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+        fullscreenModal.show();
+        // Wait for modal transition to complete
+        setTimeout(() => {
+            setupFullscreenView();
+        }, 300);
+    });
+
+    function setupFullscreenView() {
+        const containerW = fullscreenViewer.clientWidth;
+        const containerH = fullscreenViewer.clientHeight;
+        
+        // Calculate scale to fit (contain)
+        const scaleX = containerW / imgNaturalW;
+        const scaleY = containerH / imgNaturalH;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate actual dimensions
+        const actualWidth = imgNaturalW * scale;
+        const actualHeight = imgNaturalH * scale;
+        
+        // Calculate centering offsets
+        const offsetX = (containerW - actualWidth) / 2;
+        const offsetY = (containerH - actualHeight) / 2;
+        
+        // Update fullscreen viewer
+        fullscreenViewer.style.backgroundSize = 'contain';
+        fullscreenViewer.style.backgroundPosition = 'center center';
+        
+        // Setup fullscreen layers
+        setupFullscreenLayers(scale, actualWidth, actualHeight, offsetX, offsetY);
+    }
+
+    function setupFullscreenLayers(scale, actualWidth, actualHeight, offsetX, offsetY) {
+        // Clear existing content
+        fullscreenSetores.innerHTML = '';
+        fullscreenVagas.innerHTML = '';
+        
+        const cellW = actualWidth / cols;
+        const cellH = actualHeight / rows;
+        
+        // Create setores grid
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell-fullscreen';
+                
+                const left = offsetX + (c * cellW);
+                const top = offsetY + (r * cellH);
+                
+                Object.assign(cell.style, {
+                    width: `${cellW}px`,
+                    height: `${cellH}px`,
+                    left: `${left}px`,
+                    top: `${top}px`,
+                    border: '1px solid rgba(0,132,255,0.1)',
+                    position: 'absolute'
+                });
+                
+                // Apply sector color
+                const setorNome = sectorGrid[r][c];
+                if (setorNome && showSetores) {
+                    cell.style.backgroundColor = setorColorWithAlpha(setorColors[setorNome]);
+                }
+                
+                fullscreenSetores.appendChild(cell);
+            }
+        }
+        
+        // Create vagas
+        if (showVagas) {
+            renderFullscreenVagas(scale, actualWidth, actualHeight, offsetX, offsetY);
+        }
+    }
+
+    function renderFullscreenVagas(scale, actualWidth, actualHeight, offsetX, offsetY) {
+        const cellW = actualWidth / cols;
+        const cellH = actualHeight / rows;
+
+        vagasData.forEach(vaga => {
+            const grids = vaga.grids || [];
+            if (grids.length === 0) return;
+
+            const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
+            const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
+            const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
+            const maxY = Math.max(...grids.map(g => Number(g.posicaoVagaY)));
+
+            const width = (maxX - minX + 1) * cellW;
+            const height = (maxY - minY + 1) * cellH;
+            const left = offsetX + (minX * cellW);
+            const top = offsetY + (minY * cellH);
+
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+
+            const vagaColor = tipoColors[vaga.tipoVaga] || tipoColors.carro;
+
+            // Create border
+            const border = document.createElement('div');
+            Object.assign(border.style, {
+                position: 'absolute',
+                left: `${left}px`,
+                top: `${top}px`,
+                width: `${width}px`,
+                height: `${height}px`,
+                border: `2px solid ${vagaColor}`,
+                backgroundColor: `${vagaColor}20`,
+                borderRadius: '4px',
+                pointerEvents: 'none',
+                zIndex: '5'
+            });
+            fullscreenVagas.appendChild(border);
+
+            // Create icon
+            const icon = document.createElement('div');
+            const baseIconSize = Math.min(cellW, cellH);
+            const iconSize = baseIconSize * 2.0;
+            const iconType = tipoIcons[vaga.tipoVaga] || 'icon-car';
+            const rgbColor = vagaColor.replace('rgba(', '').replace(')', '').split(',');
+            const iconColor = `rgb(${rgbColor[0]}, ${rgbColor[1]}, ${rgbColor[2]})`;
+
+            Object.assign(icon.style, {
+                position: 'absolute',
+                left: `${offsetX + centerX * cellW + cellW/2 - iconSize/2}px`,
+                top: `${offsetY + centerY * cellH + cellH/2 - iconSize/2}px`,
+                width: `${iconSize}px`,
+                height: `${iconSize}px`,
+                color: iconColor,
+                pointerEvents: 'none',
+                zIndex: '10',
+                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))'
+            });
+
+            icon.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 24 24">
+                    <use xlink:href="#${iconType}"></use>
+                </svg>
+            `;
+
+            fullscreenVagas.appendChild(icon);
+        });
+    }
+
+    // Add resize handler for fullscreen mode
+    window.addEventListener('resize', () => {
+        if (fullscreenModal._element.classList.contains('show')) {
+            setupFullscreenView();
+        }
+    });
+
+    // Inicializar controles de visualização
     function initControls() {
         const toggleSetores = document.getElementById('toggleSetores');
         const toggleVagas = document.getElementById('toggleVagas');
@@ -175,6 +668,9 @@
             setoresLayer.style.opacity = '1';
             vagasLayer.style.opacity = '1';
         }
+        
+        renderSetores();
+        renderVagas();
     }
 
     // init grid
@@ -206,26 +702,6 @@
             cell.style.width = `${cellW}px`; cell.style.height = `${cellH}px`;
             cell.style.left = `${c * cellW}px`; cell.style.top = `${r * cellH}px`;
         }
-    }
-
-    function initSizes(){
-        const containerW = viewer.clientWidth, containerH = viewer.clientHeight;
-        const baseScale = Math.max(containerW / imgNaturalW, containerH / imgNaturalH) || 1;
-        baseBgW = imgNaturalW * baseScale; baseBgH = imgNaturalH * baseScale;
-        bgW = baseBgW; bgH = baseBgH;
-        posX = (containerW - bgW) / 2; posY = (containerH - bgH) / 2;
-        applyTransform();
-        updateGrid();
-        renderVagas(); // Re-render vagas após resize
-    }
-
-    function applyTransform(){
-        viewer.style.backgroundSize = `${bgW}px ${bgH}px`;
-        viewer.style.backgroundPosition = `${posX}px ${posY}px`;
-        setoresLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
-        setoresLayer.style.transformOrigin = 'top left';
-        vagasLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${bgW / baseBgW})`;
-        vagasLayer.style.transformOrigin = 'top left';
     }
 
     function renderSetores(){
@@ -279,10 +755,11 @@
         const unique = Object.keys(setorColors);
         unique.forEach(nome=>{
             const el = document.createElement('div');
-            el.className = 'd-flex align-items-center gap-2 p-1';
-            el.style.minWidth = '100px';
+            el.className = 'd-flex align-items-center gap-2 p-2 border rounded legenda-item';
+            el.style.minWidth = '120px';
             el.style.justifyContent = 'center';
-            el.innerHTML = `<div style="width:18px;height:18px;border-radius:3px;background:${setorColors[nome]};"></div>
+            el.style.backgroundColor = 'rgba(255,255,255,0.8)';
+            el.innerHTML = `<div style="width:20px;height:20px;border-radius:4px;background:${setorColors[nome]}; border:1px solid rgba(0,0,0,0.1);"></div>
                             <small style="font-weight:600">${nome}</small>`;
             legendContainer.appendChild(el);
         });
@@ -387,13 +864,15 @@
         img.onload = () => {
             imgNaturalW = img.naturalWidth; imgNaturalH = img.naturalHeight;
             viewer.style.backgroundImage = `url(${img.src})`;
-            initSizes();
+            fullscreenViewer.style.backgroundImage = `url(${img.src})`;
+            initSizesAndPosition();
             createGrid();
             loadSetores(idProjeto);
             loadVagas(idProjeto);
         };
         img.onerror = () => {
             viewer.style.backgroundImage = '';
+            fullscreenViewer.style.backgroundImage = '';
             setoresLayer.innerHTML = '';
             vagasLayer.innerHTML = '';
             console.error('Não foi possível carregar a planta:', src);
@@ -419,16 +898,10 @@
     initControls();
     updateLayersVisibility();
 
-    window.addEventListener('resize', ()=> { initSizes(); });
+    window.addEventListener('resize', ()=> { 
+        initSizesAndPosition(); 
+    });
 
 })();
 </script>
-
-<style>
-.grid-cell { transition: background-color .06s linear; }
-.vaga-icon { transition: all 0.2s ease; }
-.vaga-icon:hover { transform: scale(1.1); }
-.vaga-border { transition: all 0.2s ease; }
-.btn-group .btn { border-radius: 0.375rem !important; margin: 0 2px; }
-</style>
 @endsection
