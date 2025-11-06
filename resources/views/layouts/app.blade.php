@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="h-100">
 
 <head>
     <meta charset="UTF-8">
@@ -38,7 +38,7 @@
     </style>
 </head>
 
-<body>
+<body class="d-flex flex-column h-100">
    
     <header class="bg-light py-3 mb-4 shadow">
         <div class="container">
@@ -66,7 +66,7 @@
                         <a href="{{ route('painel.disponibilidade') }}"
                         class="d-flex gap-2 align-items-center text-decoration-none text-dark">
                             <h6 class="m-0">Painel</h6>
-                            <img src="{{ asset('lupa.png') }}" alt="Painel de Disponibilidade" class="img-fluid-1" style="width:30px; cursor:pointer;">
+                            <img src="{{ asset('computador.png') }}" alt="Painel de Disponibilidade" class="img-fluid-1" style="width:30px; cursor:pointer;">
                         </a>
                     </div>
                 @endif
@@ -86,7 +86,7 @@
         @yield('content') <!--Não Alterar essa linha;-->
     </main>
 
-    <footer class="bg-light py-3 mt-auto">
+    <footer class="footer bg-light py-3 mt-auto">
         <div class="container text-center">
             <p class="mb-0">
                 &copy; {{ date('Y') }} Estacionamento Inteligente

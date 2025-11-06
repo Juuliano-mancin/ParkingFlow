@@ -34,6 +34,16 @@
         h4, label {
             text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         }
+        @media (max-width: 767px) {
+            .col-12.col-md-6.text-center.p-3 {
+                display: none;
+            }
+            .card-custom {
+                width: 90% !important; /* Sobrescreve o width inline */
+                margin: 0 auto;        /* Centraliza horizontalmente */
+                padding: 1rem !important; /* Reduz padding em telas menores */
+            }
+        }
     </style>
 </head>
 
@@ -42,7 +52,7 @@
     <div class="card shadow-lg card-custom p-4" style="width: 60rem; min-height: 20rem;">
         <div class="row align-items-center g-0">
             <div class="col-12 col-md-6 text-center p-3">
-                <img src="{{ asset('logotipo.jpg') }}" alt="Logo ParkingFlow" class="img-fluid border border-2 border-secondary rounded" style="width: 95%;">
+                <img src="{{ asset('logotipo.jpg') }}" alt="Logo ParkingFlow" class="img-fluid border border-2 border-secondary rounded shadow" style="width: 95%;">
             </div>
 
             <div class="col-12 col-md-6 p-4">
