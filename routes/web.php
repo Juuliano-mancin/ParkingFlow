@@ -6,6 +6,7 @@ use App\Http\Controllers\ClienteController; /* Importa o ClienteController para 
 use App\Http\Controllers\EstacionamentoController; /* Importa o EstacionamentoController para ser usado nas rotas */
 use App\Http\Controllers\SetorController; /* Importa o SetorController para ser usado nas rotas */
 use App\Http\Controllers\VagaController; /* Importa o VagaController para ser usado nas rotas */
+use App\Http\Controllers\VagaInteligenteController; /* Importa o VagaInteligenteController para ser usado nas rotas */
 
 
 
@@ -44,5 +45,19 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
             Route::get('/vagas/listar/{idProjeto}', [VagaController::class, 'listar'])->name('vagas.listar'); // endpoint que já existe para JSON: listar
             Route::get('/vagas/consultar', [VagaController::class, 'consultar'])->name('vagas.consultar'); // Página de consulta / seleção de estacionamento (leva à view consultarEstacionamento)
             Route::get('/painel-disponibilidade', [App\Http\Controllers\PainelDisponibilidadeController::class, 'index'])->name('painel.disponibilidade'); // Painel de disponibilidade de setores
+            Route::get('/vagas-inteligentes', [VagaInteligenteController::class, 'index'])->name('vagas.inteligentes.index');
+            Route::get('/vagas-inteligentes/sensores', [VagaInteligenteController::class, 'getSensores'])->name('vagas.inteligentes.sensores');
+            Route::post('/vagas-inteligentes/associar', [VagaInteligenteController::class, 'associarSensor'])->name('vagas.inteligentes.associar');
+            Route::post('/vagas-inteligentes/status', [VagaInteligenteController::class, 'atualizarStatusManual'])->name('vagas.inteligentes.status');
+            Route::post('/vaga-inteligente/store', [VagaInteligenteController::class, 'store'])->name('vagaInteligente.store');
+            Route::get('/vagas-inteligentes/associar', [VagaInteligenteController::class, 'associar'])->name('vagas.inteligentes.associar');
 
+            Route::get('/vagas-inteligentes/associar', [VagaInteligenteController::class, 'associar'])->name('vagas.inteligentes.associar');
+            Route::get('/api/sensores', [VagaInteligenteController::class, 'getSensores'])->name('vagas.inteligentes.sensores');
+            Route::get('/api/vagas-inteligentes', [VagaInteligenteController::class, 'getVagasInteligentes'])->name('vagas.inteligentes.api');
+            Route::post('/vagas-inteligentes/store', [VagaInteligenteController::class, 'store'])->name('vagaInteligente.store');
+
+            Route::get('/api/sensores', [VagaInteligenteController::class, 'getSensores']);
+            Route::get('/api/vagas-inteligentes', [VagaInteligenteController::class, 'getVagasInteligentes']);
+            
     });

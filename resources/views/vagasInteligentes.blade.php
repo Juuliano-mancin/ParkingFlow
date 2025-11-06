@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Consultar Estacionamento')
+@section('title', 'Associar Sensores às Vagas')
 
 @section('content')
 <div class="container-fluid p-0 vh-100">
@@ -23,9 +23,6 @@
                     <button id="toggleVagas" class="btn btn-success active">
                         <i class="fas fa-car me-2"></i> Vagas
                     </button>
-                    <button id="toggleSensores" class="btn btn-warning active">
-                        <i class="fas fa-microchip me-2"></i> Sensores
-                    </button>
                 </div>
             </div>
 
@@ -45,16 +42,13 @@
             </div>
 
             <div id="viewer" 
-                 style="width:100%; height:100%; cursor:crosshair; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
+                 style="width:100%; height:100%; cursor:pointer; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
                 
                 <!-- Camada de Setores (fundo) -->
                 <div id="setores-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
                 
                 <!-- Camada de Vagas (sobreposição) -->
                 <div id="vagas-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
-                
-                <!-- Camada de Sensores (sobreposição) -->
-                <div id="sensores-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
             </div>
         </div>
 
@@ -64,8 +58,8 @@
                 
                 <!-- Cabeçalho -->
                 <div class="text-center mb-4">
-                    <h4 class="text-primary mb-2">Consulta do Estacionamento</h4>
-                    <p class="text-muted small">Visualize setores, vagas e sensores</p>
+                    <h4 class="text-primary mb-2">Associar Sensores</h4>
+                    <p class="text-muted small">Clique nas vagas para associar sensores</p>
                 </div>
 
                 <!-- === SELEÇÃO DE PROJETO === -->
@@ -128,40 +122,23 @@
                     </div>
                 </div>
 
-                <!-- === LEGENDA DOS SENSORES === -->
+                <!-- === STATUS DAS ASSOCIAÇÕES === -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-microchip me-2"></i>Status dos Sensores
+                            <i class="fas fa-microchip me-2"></i>Status das Associações
                         </h5>
                         <div class="d-flex flex-column gap-2">
                             <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.8); border-radius:50%; border:2px solid #28a745;"></div>
-                                <div class="sensor-label flex-grow-1">Sensor Ativo</div>
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border:2px solid #28a745; border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Com Sensor</div>
                                 <i class="fas fa-check text-success"></i>
                             </div>
                             <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.8); border-radius:50%; border:2px solid #dc3545;"></div>
-                                <div class="sensor-label flex-grow-1">Sensor Inativo</div>
+                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.6); border:2px dashed #dc3545; border-radius:4px;"></div>
+                                <div class="vaga-label flex-grow-1">Sem Sensor</div>
                                 <i class="fas fa-times text-danger"></i>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.8); border-radius:50%; border:2px dashed #ffc107;"></div>
-                                <div class="sensor-label flex-grow-1">Vaga sem Sensor</div>
-                                <i class="fas fa-question text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === INFO DO SENSOR SELECIONADO === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-info-circle me-2"></i>Informações do Sensor
-                        </h5>
-                        <div id="sensorInfo" class="text-center p-3 border rounded bg-light">
-                            <small class="text-muted">Passe o mouse sobre um sensor para ver informações</small>
                         </div>
                     </div>
                 </div>
@@ -189,12 +166,51 @@
     </div>
 </div>
 
+<!-- Modal para Associar Sensor -->
+<div class="modal fade" id="sensorModal" tabindex="-1" aria-labelledby="sensorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sensorModalLabel">Associar Sensor à Vaga</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informações da Vaga</h6>
+                        <div id="vagaInfo" class="p-3 border rounded bg-light">
+                            <!-- Informações da vaga serão preenchidas via JavaScript -->
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Selecionar Sensor</h6>
+                        <div class="mb-3">
+                            <label for="sensorSelect" class="form-label">Sensores Disponíveis</label>
+                            <select class="form-select" id="sensorSelect">
+                                <option value="">Selecione um sensor...</option>
+                                <!-- Sensores serão preenchidos via JavaScript -->
+                            </select>
+                        </div>
+                        <div id="sensorInfo" class="p-3 border rounded bg-light" style="display:none;">
+                            <!-- Informações do sensor serão preenchidas via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnAssociarSensor">Associar Sensor</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para Tela Cheia -->
 <div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content border-0">
             <div class="modal-header border-0 bg-dark">
-                <h5 class="modal-title text-white">Visualização em Tela Cheia - Consulta</h5>
+                <h5 class="modal-title text-white">Visualização em Tela Cheia - Associar Sensores</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0 bg-dark position-relative">
@@ -204,14 +220,12 @@
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
                 <div id="fullscreenVagas" 
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
-                <div id="fullscreenSensores" 
-                     style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Ícones SVG para as vagas e sensores -->
+<!-- Ícones SVG para as vagas -->
 <svg style="display: none;">
     <symbol id="icon-car" viewBox="0 0 24 24">
         <path fill="currentColor" d="M5 11l1.5-4.5h11L19 11m-1.5 5a1.5 1.5 0 0 1-1.5-1.5a1.5 1.5 0 0 1 1.5-1.5a1.5 1.5 0 0 1 1.5 1.5a1.5 1.5 0 0 1-1.5 1.5m-11 0A1.5 1.5 0 0 1 5 14.5A1.5 1.5 0 0 1 6.5 13A1.5 1.5 0 0 1 8 14.5A1.5 1.5 0 0 1 6.5 16M18.92 6A1.5 1.5 0 0 0 17.5 5h-11A1.5 1.5 0 0 0 5.08 6L3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6l-2.08-6z"/>
@@ -324,24 +338,22 @@
     
     .vaga-icon { 
         transition: all 0.2s ease; 
+        cursor: pointer;
     }
     
     .vaga-icon:hover { 
-        transform: scale(1.1); 
+        transform: scale(1.2); 
+        filter: brightness(1.2) drop-shadow(2px 2px 4px rgba(0,0,0,0.4));
     }
     
     .vaga-border { 
         transition: all 0.2s ease; 
-    }
-    
-    .sensor-icon {
-        transition: all 0.3s ease;
         cursor: pointer;
     }
     
-    .sensor-icon:hover { 
-        transform: scale(1.3);
-        filter: drop-shadow(0 0 8px rgba(255,255,255,0.8));
+    .vaga-border:hover { 
+        transform: scale(1.02); 
+        box-shadow: 0 0 10px rgba(0,123,255,0.5);
     }
     
     .btn-group .btn { 
@@ -350,7 +362,7 @@
     }
 
     /* Melhorias para legibilidade */
-    .vaga-indicador, .sensor-indicador {
+    .vaga-indicador {
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
@@ -363,19 +375,14 @@
         background-color: rgba(0,123,255,0.05) !important;
     }
 
-    /* Estilo para sensor tooltip */
-    .sensor-tooltip {
-        position: absolute;
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        z-index: 1000;
-        pointer-events: none;
-        white-space: nowrap;
-        transform: translateY(-100%);
-        margin-top: -10px;
+    /* Estilo para vagas com sensor */
+    .vaga-com-sensor {
+        border-width: 3px !important;
+        box-shadow: 0 0 8px rgba(40,167,69,0.5);
+    }
+
+    .vaga-sem-sensor {
+        border-style: dashed !important;
     }
 </style>
 
@@ -396,15 +403,13 @@
     const viewer = document.getElementById('viewer');
     const setoresLayer = document.getElementById('setores-layer');
     const vagasLayer = document.getElementById('vagas-layer');
-    const sensoresLayer = document.getElementById('sensores-layer');
     const legendCard = document.getElementById('legendaSetoresCard');
     const legendContainer = document.getElementById('legendaSetores');
-    const sensorInfoEl = document.getElementById('sensorInfo');
     const fullscreenViewer = document.getElementById('fullscreenViewer');
     const fullscreenSetores = document.getElementById('fullscreenSetores');
     const fullscreenVagas = document.getElementById('fullscreenVagas');
-    const fullscreenSensores = document.getElementById('fullscreenSensores');
     const fullscreenModal = new bootstrap.Modal(document.getElementById('fullscreenModal'));
+    const sensorModal = new bootstrap.Modal(document.getElementById('sensorModal'));
     const zoomLevelElement = document.getElementById('zoomLevel');
 
     let imgNaturalW = 1, imgNaturalH = 1;
@@ -428,13 +433,13 @@
     const sectorGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
     let setorColors = {};
     let vagasData = [];
-    let vagasInteligentesData = [];
     let sensoresData = [];
+    let vagasInteligentesData = [];
+    let vagaSelecionada = null;
     
     // Estados dos filtros
     let showSetores = true;
     let showVagas = true;
-    let showSensores = true;
 
     // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
     function initSizesAndPosition() {
@@ -462,7 +467,6 @@
         updateGrid();
         updateZoomIndicator();
         renderVagas();
-        renderSensores();
     }
 
     function applyTransform() {
@@ -474,8 +478,6 @@
         setoresLayer.style.transformOrigin = 'top left';
         vagasLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
         vagasLayer.style.transformOrigin = 'top left';
-        sensoresLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
-        sensoresLayer.style.transformOrigin = 'top left';
     }
 
     function updateZoomIndicator() {
@@ -534,7 +536,6 @@
         updateGrid();
         updateZoomIndicator();
         renderVagas();
-        renderSensores();
     }
 
     // === CONTROLES DE ZOOM ===
@@ -564,7 +565,6 @@
         updateGrid();
         updateZoomIndicator();
         renderVagas();
-        renderSensores();
     });
 
     // === TELA CHEIA ===
@@ -605,7 +605,6 @@
         // Clear existing content
         fullscreenSetores.innerHTML = '';
         fullscreenVagas.innerHTML = '';
-        fullscreenSensores.innerHTML = '';
         
         const cellW = actualWidth / cols;
         const cellH = actualHeight / rows;
@@ -642,11 +641,6 @@
         if (showVagas) {
             renderFullscreenVagas(scale, actualWidth, actualHeight, offsetX, offsetY);
         }
-        
-        // Create sensores
-        if (showSensores) {
-            renderFullscreenSensores(scale, actualWidth, actualHeight, offsetX, offsetY);
-        }
     }
 
     function renderFullscreenVagas(scale, actualWidth, actualHeight, offsetX, offsetY) {
@@ -671,6 +665,7 @@
             const centerY = (minY + maxY) / 2;
 
             const vagaColor = tipoColors[vaga.tipoVaga] || tipoColors.carro;
+            const temSensor = vagasInteligentesData.some(vi => vi.idVaga === vaga.idVaga);
 
             // Create border
             const border = document.createElement('div');
@@ -680,12 +675,15 @@
                 top: `${top}px`,
                 width: `${width}px`,
                 height: `${height}px`,
-                border: `2px solid ${vagaColor}`,
+                border: temSensor ? `3px solid ${vagaColor}` : `2px dashed ${vagaColor}`,
                 backgroundColor: `${vagaColor}20`,
                 borderRadius: '4px',
                 pointerEvents: 'none',
                 zIndex: '5'
             });
+            if (temSensor) {
+                border.style.boxShadow = '0 0 8px rgba(40,167,69,0.5)';
+            }
             fullscreenVagas.appendChild(border);
 
             // Create icon
@@ -715,57 +713,31 @@
             `;
 
             fullscreenVagas.appendChild(icon);
-        });
-    }
 
-    function renderFullscreenSensores(scale, actualWidth, actualHeight, offsetX, offsetY) {
-        const cellW = actualWidth / cols;
-        const cellH = actualHeight / rows;
+            // Add sensor icon if vaga has sensor
+            if (temSensor) {
+                const sensorIcon = document.createElement('div');
+                const sensorSize = baseIconSize * 1.2;
+                Object.assign(sensorIcon.style, {
+                    position: 'absolute',
+                    left: `${offsetX + centerX * cellW + cellW/2 + iconSize/4}px`,
+                    top: `${offsetY + centerY * cellH + cellH/2 - iconSize/4}px`,
+                    width: `${sensorSize}px`,
+                    height: `${sensorSize}px`,
+                    color: '#28a745',
+                    pointerEvents: 'none',
+                    zIndex: '15',
+                    filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))'
+                });
 
-        vagasInteligentesData.forEach(vi => {
-            const vaga = vagasData.find(v => v.idVaga === vi.idVaga);
-            if (!vaga) return;
+                sensorIcon.innerHTML = `
+                    <svg width="100%" height="100%" viewBox="0 0 24 24">
+                        <use xlink:href="#icon-sensor"></use>
+                    </svg>
+                `;
 
-            const grids = vaga.grids || [];
-            if (grids.length === 0) return;
-
-            // Calcula o centro da vaga
-            const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
-            const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
-            const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
-            const maxY = Math.max(...grids.map(g => Number(g.posicaoVagaY)));
-
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-
-            const sensor = sensoresData.find(s => s.idSensor === vi.idSensor);
-            if (!sensor) return;
-
-            const sensorColor = sensor.statusManual ? '#28a745' : '#dc3545';
-            const sensorSize = Math.min(cellW, cellH) * 1.5;
-
-            // Create sensor icon
-            const sensorIcon = document.createElement('div');
-            sensorIcon.className = 'sensor-icon';
-            Object.assign(sensorIcon.style, {
-                position: 'absolute',
-                left: `${offsetX + centerX * cellW + cellW/2 - sensorSize/2}px`,
-                top: `${offsetY + centerY * cellH + cellH/2 - sensorSize/2}px`,
-                width: `${sensorSize}px`,
-                height: `${sensorSize}px`,
-                color: sensorColor,
-                pointerEvents: 'none',
-                zIndex: '15',
-                filter: 'drop-shadow(1px 1px 3px rgba(0,0,0,0.5))'
-            });
-
-            sensorIcon.innerHTML = `
-                <svg width="100%" height="100%" viewBox="0 0 24 24">
-                    <use xlink:href="#icon-sensor"></use>
-                </svg>
-            `;
-
-            fullscreenSensores.appendChild(sensorIcon);
+                fullscreenVagas.appendChild(sensorIcon);
+            }
         });
     }
 
@@ -780,7 +752,6 @@
     function initControls() {
         const toggleSetores = document.getElementById('toggleSetores');
         const toggleVagas = document.getElementById('toggleVagas');
-        const toggleSensores = document.getElementById('toggleSensores');
         
         toggleSetores.addEventListener('click', () => {
             showSetores = !showSetores;
@@ -797,45 +768,29 @@
             toggleVagas.classList.toggle('btn-success', showVagas);
             updateLayersVisibility();
         });
-        
-        toggleSensores.addEventListener('click', () => {
-            showSensores = !showSensores;
-            toggleSensores.classList.toggle('active', showSensores);
-            toggleSensores.classList.toggle('btn-outline-warning', !showSensores);
-            toggleSensores.classList.toggle('btn-warning', showSensores);
-            updateLayersVisibility();
-        });
     }
 
     function updateLayersVisibility() {
         setoresLayer.style.display = showSetores ? 'block' : 'none';
         vagasLayer.style.display = showVagas ? 'block' : 'none';
-        sensoresLayer.style.display = showSensores ? 'block' : 'none';
         
-        // Aplica transparência quando múltiplas camadas estão visíveis
-        if (showSetores && showVagas && showSensores) {
-            setoresLayer.style.opacity = '0.6';
-            vagasLayer.style.opacity = '0.8';
-            sensoresLayer.style.opacity = '1';
-        } else if (showSetores && showVagas) {
+        // Aplica transparência quando ambos estão visíveis
+        if (showSetores && showVagas) {
             setoresLayer.style.opacity = '0.7';
             vagasLayer.style.opacity = '1';
         } else {
             setoresLayer.style.opacity = '1';
             vagasLayer.style.opacity = '1';
-            sensoresLayer.style.opacity = '1';
         }
         
         renderSetores();
         renderVagas();
-        renderSensores();
     }
 
     // init grid
     function createGrid(){
         setoresLayer.innerHTML = '';
         vagasLayer.innerHTML = '';
-        sensoresLayer.innerHTML = '';
         
         for(let r=0;r<rows;r++){
             for(let c=0;c<cols;c++){
@@ -930,27 +885,44 @@
         try {
             const res = await fetch(`/vagas/listar/${idProjeto}`);
             vagasData = await res.json();
+            await loadVagasInteligentes();
             renderVagas();
         } catch(e){
             console.error('Erro ao carregar vagas:', e);
         }
     }
 
-    // load sensores and vagas inteligentes
+    // load sensores
     async function loadSensores(){
         try {
-            // Carrega sensores
-            const sensoresRes = await fetch('/api/sensores');
-            sensoresData = await sensoresRes.json();
-            
-            // Carrega associações de sensores
-            const vagasInteligentesRes = await fetch('/api/vagas-inteligentes');
-            vagasInteligentesData = await vagasInteligentesRes.json();
-            
-            renderSensores();
+            const res = await fetch("{{ route('vagas.inteligentes.sensores') }}");
+            sensoresData = await res.json();
+            populateSensorSelect();
         } catch(e){
             console.error('Erro ao carregar sensores:', e);
         }
+    }
+
+    // load vagas inteligentes (associações existentes)
+    async function loadVagasInteligentes(){
+        try {
+            const res = await fetch('/api/vagas-inteligentes');
+            vagasInteligentesData = await res.json();
+        } catch(e){
+            console.error('Erro ao carregar vagas inteligentes:', e);
+        }
+    }
+
+    function populateSensorSelect() {
+        const select = document.getElementById('sensorSelect');
+        select.innerHTML = '<option value="">Selecione um sensor...</option>';
+        
+        sensoresData.forEach(sensor => {
+            const option = document.createElement('option');
+            option.value = sensor.idSensor;
+            option.textContent = `${sensor.nomeSensor} (ID: ${sensor.idSensor})`;
+            select.appendChild(option);
+        });
     }
 
     function renderVagas() {
@@ -979,22 +951,27 @@
             const centerY = (minY + maxY) / 2;
 
             const vagaColor = tipoColors[vaga.tipoVaga] || tipoColors.carro;
+            const temSensor = vagasInteligentesData.some(vi => vi.idVaga === vaga.idVaga);
 
             // Cria a borda externa da vaga
             const border = document.createElement('div');
-            border.className = 'vaga-border';
+            border.className = `vaga-border ${temSensor ? 'vaga-com-sensor' : 'vaga-sem-sensor'}`;
             Object.assign(border.style, {
                 position: 'absolute',
                 left: `${left}px`,
                 top: `${top}px`,
                 width: `${width}px`,
                 height: `${height}px`,
-                border: `2px solid ${vagaColor}`,
+                border: temSensor ? `3px solid ${vagaColor}` : `2px dashed ${vagaColor}`,
                 backgroundColor: `${vagaColor}20`,
                 borderRadius: '4px',
-                pointerEvents: 'none',
-                zIndex: '5'
+                pointerEvents: 'auto',
+                zIndex: '5',
+                cursor: 'pointer'
             });
+
+            // Adiciona evento de clique na borda
+            border.addEventListener('click', () => abrirModalSensor(vaga));
             vagasLayer.appendChild(border);
 
             // Cria o ícone centralizado (200% maior)
@@ -1015,9 +992,10 @@
                 width: `${iconSize}px`,
                 height: `${iconSize}px`,
                 color: iconColor,
-                pointerEvents: 'none',
+                pointerEvents: 'auto',
                 zIndex: '10',
-                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))'
+                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))',
+                cursor: 'pointer'
             });
 
             icon.innerHTML = `
@@ -1026,110 +1004,149 @@
                 </svg>
             `;
 
+            // Adiciona evento de clique no ícone
+            icon.addEventListener('click', () => abrirModalSensor(vaga));
             vagasLayer.appendChild(icon);
+
+            // Adiciona ícone de sensor se a vaga tiver sensor associado
+            if (temSensor) {
+                const sensorIcon = document.createElement('div');
+                const sensorSize = baseIconSize * 1.2;
+                Object.assign(sensorIcon.style, {
+                    position: 'absolute',
+                    left: `${centerX * cellW + cellW/2 + iconSize/4}px`,
+                    top: `${centerY * cellH + cellH/2 - iconSize/4}px`,
+                    width: `${sensorSize}px`,
+                    height: `${sensorSize}px`,
+                    color: '#28a745',
+                    pointerEvents: 'none',
+                    zIndex: '15',
+                    filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))'
+                });
+
+                sensorIcon.innerHTML = `
+                    <svg width="100%" height="100%" viewBox="0 0 24 24">
+                        <use xlink:href="#icon-sensor"></use>
+                    </svg>
+                `;
+
+                vagasLayer.appendChild(sensorIcon);
+            }
         });
     }
 
-    function renderSensores() {
-        if (!showSensores) return;
+    function abrirModalSensor(vaga) {
+        vagaSelecionada = vaga;
         
-        sensoresLayer.innerHTML = '';
-        const cellW = baseBgW / cols;
-        const cellH = baseBgH / rows;
+        // Preenche informações da vaga
+        const vagaInfo = document.getElementById('vagaInfo');
+        const sensorAssociado = vagasInteligentesData.find(vi => vi.idVaga === vaga.idVaga);
+        const sensor = sensorAssociado ? sensoresData.find(s => s.idSensor === sensorAssociado.idSensor) : null;
 
-        vagasInteligentesData.forEach(vi => {
-            const vaga = vagasData.find(v => v.idVaga === vi.idVaga);
-            if (!vaga) return;
+        vagaInfo.innerHTML = `
+            <div class="mb-2">
+                <strong>Nome:</strong> ${vaga.nomeVaga}
+            </div>
+            <div class="mb-2">
+                <strong>Tipo:</strong> ${vaga.tipoVaga}
+            </div>
+            <div class="mb-2">
+                <strong>Setor:</strong> ${vaga.setor?.nomeSetor || 'N/A'}
+            </div>
+            <div class="mb-2">
+                <strong>Sensor Associado:</strong> 
+                ${sensor ? `${sensor.nomeSensor} (ID: ${sensor.idSensor})` : 'Nenhum'}
+            </div>
+            <div>
+                <strong>Status:</strong> 
+                <span class="badge ${sensor ? 'bg-success' : 'bg-danger'}">
+                    ${sensor ? 'Com Sensor' : 'Sem Sensor'}
+                </span>
+            </div>
+        `;
 
-            const grids = vaga.grids || [];
-            if (grids.length === 0) return;
+        // Preenche select de sensores
+        const sensorSelect = document.getElementById('sensorSelect');
+        sensorSelect.value = sensor ? sensor.idSensor : '';
 
-            // Calcula o centro da vaga
-            const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
-            const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
-            const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
-            const maxY = Math.max(...grids.map(g => Number(g.posicaoVagaY)));
-
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-
-            const sensor = sensoresData.find(s => s.idSensor === vi.idSensor);
-            if (!sensor) return;
-
-            const sensorColor = sensor.statusManual ? '#28a745' : '#dc3545';
-            const sensorSize = Math.min(cellW, cellH) * 1.5;
-
-            // Cria o ícone do sensor
-            const sensorIcon = document.createElement('div');
-            sensorIcon.className = 'sensor-icon';
-            Object.assign(sensorIcon.style, {
-                position: 'absolute',
-                left: `${centerX * cellW + cellW/2 - sensorSize/2}px`,
-                top: `${centerY * cellH + cellH/2 - sensorSize/2}px`,
-                width: `${sensorSize}px`,
-                height: `${sensorSize}px`,
-                color: sensorColor,
-                pointerEvents: 'auto',
-                zIndex: '15',
-                filter: 'drop-shadow(1px 1px 3px rgba(0,0,0,0.5))',
-                cursor: 'pointer'
-            });
-
-            sensorIcon.innerHTML = `
-                <svg width="100%" height="100%" viewBox="0 0 24 24">
-                    <use xlink:href="#icon-sensor"></use>
-                </svg>
-            `;
-
-            // Adiciona tooltip com informações do sensor
-            sensorIcon.addEventListener('mouseenter', (e) => {
-                const tooltip = document.createElement('div');
-                tooltip.className = 'sensor-tooltip';
-                tooltip.innerHTML = `
-                    <strong>${sensor.nomeSensor}</strong><br>
-                    Status: ${sensor.statusManual ? 'Ativo' : 'Inativo'}<br>
-                    Vaga: ${vaga.nomeVaga}
-                `;
-                tooltip.style.left = `${e.pageX + 10}px`;
-                tooltip.style.top = `${e.pageY - 10}px`;
-                document.body.appendChild(tooltip);
-
-                // Atualiza informações no painel
-                sensorInfoEl.innerHTML = `
-                    <div class="text-start">
-                        <strong>Sensor:</strong> ${sensor.nomeSensor}<br>
-                        <strong>ID:</strong> ${sensor.idSensor}<br>
+        // Mostra informações do sensor selecionado
+        sensorSelect.addEventListener('change', function() {
+            const sensorId = this.value;
+            const sensorInfo = document.getElementById('sensorInfo');
+            const sensorSelecionado = sensoresData.find(s => s.idSensor == sensorId);
+            
+            if (sensorSelecionado) {
+                sensorInfo.style.display = 'block';
+                sensorInfo.innerHTML = `
+                    <div class="mb-2">
+                        <strong>Nome:</strong> ${sensorSelecionado.nomeSensor}
+                    </div>
+                    <div class="mb-2">
+                        <strong>ID:</strong> ${sensorSelecionado.idSensor}
+                    </div>
+                    <div>
                         <strong>Status:</strong> 
-                        <span class="badge ${sensor.statusManual ? 'bg-success' : 'bg-danger'}">
-                            ${sensor.statusManual ? 'Ativo' : 'Inativo'}
-                        </span><br>
-                        <strong>Vaga:</strong> ${vaga.nomeVaga}<br>
-                        <strong>Tipo:</strong> ${vaga.tipoVaga}
+                        <span class="badge ${sensorSelecionado.statusManual ? 'bg-warning' : 'bg-secondary'}">
+                            ${sensorSelecionado.statusManual ? 'Manual' : 'Automático'}
+                        </span>
                     </div>
                 `;
-            });
-
-            sensorIcon.addEventListener('mousemove', (e) => {
-                const tooltip = document.querySelector('.sensor-tooltip');
-                if (tooltip) {
-                    tooltip.style.left = `${e.pageX + 10}px`;
-                    tooltip.style.top = `${e.pageY - 10}px`;
-                }
-            });
-
-            sensorIcon.addEventListener('mouseleave', () => {
-                const tooltip = document.querySelector('.sensor-tooltip');
-                if (tooltip) {
-                    tooltip.remove();
-                }
-                sensorInfoEl.innerHTML = '<small class="text-muted">Passe o mouse sobre um sensor para ver informações</small>';
-            });
-
-            sensoresLayer.appendChild(sensorIcon);
+            } else {
+                sensorInfo.style.display = 'none';
+            }
         });
+
+        // Dispara o change event para atualizar informações
+        sensorSelect.dispatchEvent(new Event('change'));
+
+        // Abre o modal
+        sensorModal.show();
     }
 
-    // set projeto (load image, setores, vagas, sensores)
+    // Evento para associar sensor
+    document.getElementById('btnAssociarSensor').addEventListener('click', async function() {
+        if (!vagaSelecionada) return;
+
+        const sensorSelect = document.getElementById('sensorSelect');
+        const sensorId = sensorSelect.value;
+
+        if (!sensorId) {
+            alert('Por favor, selecione um sensor.');
+            return;
+        }
+
+        try {
+            const response = await fetch("{{ route('vagaInteligente.store') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    idVaga: vagaSelecionada.idVaga,
+                    idSensor: sensorId
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Sensor associado com sucesso!');
+                sensorModal.hide();
+                
+                // Recarrega as associações
+                await loadVagasInteligentes();
+                renderVagas();
+            } else {
+                alert('Erro ao associar sensor: ' + (result.message || 'Erro desconhecido'));
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com o servidor.');
+        }
+    });
+
+    // set projeto (load image, setores, vagas)
     function setProjeto(idProjeto){
         const proj = projectById(idProjeto);
         if(!proj) return;
@@ -1151,7 +1168,6 @@
             fullscreenViewer.style.backgroundImage = '';
             setoresLayer.innerHTML = '';
             vagasLayer.innerHTML = '';
-            sensoresLayer.innerHTML = '';
             console.error('Não foi possível carregar a planta:', src);
         };
     }

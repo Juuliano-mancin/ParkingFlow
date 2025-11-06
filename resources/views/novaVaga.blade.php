@@ -1011,8 +1011,11 @@
             });
             const result = await response.json();
             if (result.success) {
-                alert('✅ Vagas salvas com sucesso!');
+                alert('✅ Vagas salvas com sucesso! Agora você será redirecionado para associar sensores.');
                 clearAllVagas();
+                
+                // Redireciona para a view de associar sensores
+                window.location.href = "{{ route('vagas.inteligentes.associar') }}";
             } else {
                 alert('⚠️ Erro ao salvar: ' + (result.message || 'Verifique servidor.'));
             }

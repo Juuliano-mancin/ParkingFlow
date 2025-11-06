@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ClienteTesteSeeder::class,
-            // Outros seeders aqui...
+            SensorSeeder::class,
         ]);
     }
 }
