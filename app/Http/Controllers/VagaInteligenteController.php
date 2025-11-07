@@ -7,6 +7,7 @@ use App\Models\Vaga;
 use App\Models\Sensor;
 use App\Models\VagaInteligente;
 use App\Models\Projeto;
+use Illuminate\Support\Facades\Log;
 
 class VagaInteligenteController extends Controller
 {
@@ -117,15 +118,25 @@ class VagaInteligenteController extends Controller
     /**
      * Atualiza o status manual do sensor.
      */
-    public function toggleStatus($idSensor)
+    public function toggleStatus($idSensor, Request $request)
     {
-        $sensor = Sensor::findOrFail($idSensor);
-        $sensor->statusManual = !$sensor->statusManual;
-        $sensor->save();
+        try {
+            $sensor = Sensor::findOrFail($idSensor);
+            $sensor->statusManual = $request->input('statusManual');
+            $sensor->save();
 
-        return response()->json([
-            'success' => true,
-            'status' => $sensor->statusManual,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Status atualizado com sucesso',
+                'status' => $sensor->statusManual,
+                'sensor' => $sensor
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar sensor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar sensor: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

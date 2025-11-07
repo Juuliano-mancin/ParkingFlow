@@ -59,5 +59,13 @@ Route::middleware('auth')->group(function () /* Agrupa rotas que só podem ser a
 
             Route::get('/api/sensores', [VagaInteligenteController::class, 'getSensores']);
             Route::get('/api/vagas-inteligentes', [VagaInteligenteController::class, 'getVagasInteligentes']);
+
+            Route::middleware(['api'])->group(function () {
+            Route::put('/sensores/{sensor}/toggle-status', [VagaInteligenteController::class, 'toggleStatus']);
+            Route::put('/api/sensores/{sensor}/toggle-status', [VagaInteligenteController::class, 'toggleStatus']);
+        
+    });
             
     });
+
+    

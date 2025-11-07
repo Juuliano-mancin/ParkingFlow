@@ -137,12 +137,12 @@
                         <div class="d-flex flex-column gap-2">
                             <div class="d-flex align-items-center p-2 border rounded bg-light">
                                 <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.8); border-radius:50%; border:2px solid #28a745;"></div>
-                                <div class="sensor-label flex-grow-1">Sensor Ativo</div>
+                                <div class="sensor-label flex-grow-1">Vaga Livre</div>
                                 <i class="fas fa-check text-success"></i>
                             </div>
                             <div class="d-flex align-items-center p-2 border rounded bg-light">
                                 <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.8); border-radius:50%; border:2px solid #dc3545;"></div>
-                                <div class="sensor-label flex-grow-1">Sensor Inativo</div>
+                                <div class="sensor-label flex-grow-1">Vaga Ocupada</div>
                                 <i class="fas fa-times text-danger"></i>
                             </div>
                             <div class="d-flex align-items-center p-2 border rounded bg-light">
@@ -344,6 +344,11 @@
         filter: drop-shadow(0 0 8px rgba(255,255,255,0.8));
     }
     
+    .sensor-icon:active {
+        transform: scale(1.1);
+        transition: transform 0.1s ease;
+    }
+    
     .btn-group .btn { 
         border-radius: 0.375rem !important; 
         margin: 0 2px; 
@@ -376,6 +381,24 @@
         white-space: nowrap;
         transform: translateY(-100%);
         margin-top: -10px;
+    }
+
+    /* Animação para feedback visual */
+    @keyframes statusChange {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .status-updated {
+        animation: statusChange 0.5s ease;
+    }
+
+    /* Alertas personalizados */
+    .status-alert {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
     }
 </style>
 
@@ -435,6 +458,176 @@
     let showSetores = true;
     let showVagas = true;
     let showSensores = true;
+
+    // === CÓDIGO DE DEBUG CSRF ===
+    function debugCSRFToken() {
+        console.log('🔍 === DEBUG CSRF TOKEN ===');
+        
+        // Verifica meta tag
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        console.log('📍 Meta token element:', metaToken);
+        
+        if (metaToken) {
+            const tokenContent = metaToken.getAttribute('content');
+            console.log('✅ Meta token content:', tokenContent);
+            console.log('📏 Token length:', tokenContent?.length);
+            console.log('🔢 Token preview:', tokenContent?.substring(0, 20) + '...');
+        } else {
+            console.error('❌ META TOKEN NÃO ENCONTRADO!');
+            
+            // Lista todos os meta tags para debug
+            const allMetaTags = document.querySelectorAll('meta');
+            console.log('📋 Todos os meta tags na página:');
+            allMetaTags.forEach((meta, index) => {
+                console.log(`   ${index + 1}. name="${meta.getAttribute('name')}", content="${meta.getAttribute('content')}"`);
+            });
+        }
+        
+        // Verifica input token como fallback
+        const inputToken = document.querySelector('input[name="_token"]');
+        console.log('📍 Input token element:', inputToken);
+        if (inputToken) {
+            console.log('✅ Input token value:', inputToken.value);
+        }
+        
+        console.log('🔍 === FIM DEBUG CSRF ===');
+    }
+
+    function testTokenAccess() {
+        console.log('🧪 === TESTE DE ACESSO AO TOKEN ===');
+        
+        try {
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) {
+                const token = metaToken.getAttribute('content');
+                console.log('✅ SUCESSO: Token acessível via:', token);
+            } else {
+                console.error('❌ FALHA: Meta token não encontrado');
+            }
+        } catch (error) {
+            console.error('💥 ERRO CRÍTICO ao acessar token:', error);
+        }
+        
+        console.log('🧪 === FIM DO TESTE ===');
+    }
+
+    // === FUNÇÃO updateSensorStatus ATUALIZADA COM DEBUG COMPLETO ===
+    async function updateSensorStatus(sensorId, newStatus) {
+        try {
+            console.log('🚀 === INICIANDO UPDATE SENSOR ===');
+            console.log('📋 Sensor ID:', sensorId, 'Novo status:', newStatus);
+            
+            // DEBUG: Verificar token antes de tudo
+            console.log('🔍 Buscando token CSRF...');
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            console.log('📍 Elemento meta encontrado:', metaToken);
+            
+            if (!metaToken) {
+                console.error('❌ ERRO CRÍTICO: Meta token não encontrado!');
+                console.error('💡 Possíveis causas:');
+                console.error('   - Meta tag não carregou no DOM');
+                console.error('   - Problema de timing no carregamento');
+                console.error('   - Cache do navegador');
+                
+                // Executa debug detalhado
+                debugCSRFToken();
+                
+                showAlert('Erro de configuração. Recarregue a página.', 'danger');
+                return;
+            }
+            
+            const csrfToken = metaToken.getAttribute('content');
+            console.log('📋 Token CSRF:', csrfToken ? `Encontrado (${csrfToken.length} caracteres)` : 'VAZIO/NULO');
+            
+            if (!csrfToken) {
+                console.error('❌ ERRO: Token CSRF vazio!');
+                console.error('💡 O meta tag existe mas o content está vazio');
+                showAlert('Token de segurança não encontrado.', 'danger');
+                return;
+            }
+
+            console.log('✅ Token válido encontrado!');
+
+            // URL da API - verifique se está correta
+            const apiUrl = `/api/sensores/${sensorId}/toggle-status`;
+            console.log('🌐 Fazendo requisição para:', apiUrl);
+
+            console.log('📦 Preparando requisição...');
+            const requestOptions = {
+                method: 'POST', // Use POST que é mais compatível
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    statusManual: newStatus,
+                    _method: 'PUT' // Simula PUT via POST
+                })
+            };
+
+            console.log('📤 Enviando requisição...', requestOptions);
+
+            const response = await fetch(apiUrl, requestOptions);
+
+            console.log('📨 Resposta recebida. Status:', response.status, response.statusText);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ Sucesso! Resposta da API:', result);
+                
+                // Atualiza os dados locais
+                const sensor = sensoresData.find(s => s.idSensor === sensorId);
+                if (sensor) {
+                    sensor.statusManual = newStatus;
+                    console.log('🔄 Sensor local atualizado:', sensor);
+                } else {
+                    console.warn('⚠️ Sensor não encontrado nos dados locais');
+                }
+                
+                // Re-renderiza os sensores
+                console.log('🎨 Re-renderizando sensores...');
+                renderSensores();
+                
+                // Mostra mensagem de sucesso
+                const statusText = newStatus ? 'ocupada' : 'livre';
+                showAlert(`✅ Status da vaga atualizado para "${statusText}"!`, 'success');
+                
+            } else {
+                console.error('❌ Erro na resposta:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('📝 Detalhes do erro:', errorText);
+                
+                // Tenta parsear como JSON para mais detalhes
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    console.error('📊 Erro JSON:', errorJson);
+                } catch (e) {
+                    console.error('📄 Erro como texto:', errorText);
+                }
+                
+                throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+            }
+            
+            console.log('🎉 === UPDATE SENSOR CONCLUÍDO COM SUCESSO ===');
+            
+        } catch (error) {
+            console.error('💥 === ERRO COMPLETO AO ATUALIZAR SENSOR ===');
+            console.error('📌 Error:', error);
+            console.error('📌 Message:', error.message);
+            console.error('📌 Stack:', error.stack);
+            
+            showAlert('❌ Erro ao atualizar status da vaga. Verifique o console para detalhes.', 'danger');
+        }
+    }
+
+    // === TESTE MANUAL NO CONSOLE ===
+    // Adiciona função global para teste
+    window.testSensorUpdate = function(sensorId, newStatus) {
+        console.log('🧪 TESTE MANUAL - Sensor:', sensorId, 'Status:', newStatus);
+        return updateSensorStatus(sensorId, newStatus);
+    };
 
     // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
     function initSizesAndPosition() {
@@ -741,7 +934,7 @@
             const sensor = sensoresData.find(s => s.idSensor === vi.idSensor);
             if (!sensor) return;
 
-            const sensorColor = sensor.statusManual ? '#28a745' : '#dc3545';
+            const sensorColor = sensor.statusManual ? '#dc3545' : '#28a745';
             const sensorSize = Math.min(cellW, cellH) * 1.5;
 
             // Create sensor icon
@@ -1030,6 +1223,33 @@
         });
     }
 
+    // Função para mostrar alertas
+    function showAlert(message, type) {
+        // Remove alertas existentes
+        const existingAlert = document.querySelector('.status-alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+
+        // Cria novo alerta
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show status-alert position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(alert);
+
+        // Remove automaticamente após 3 segundos
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 3000);
+    }
+
     function renderSensores() {
         if (!showSensores) return;
         
@@ -1056,12 +1276,14 @@
             const sensor = sensoresData.find(s => s.idSensor === vi.idSensor);
             if (!sensor) return;
 
-            const sensorColor = sensor.statusManual ? '#28a745' : '#dc3545';
+            const sensorColor = sensor.statusManual ? '#dc3545' : '#28a745';
             const sensorSize = Math.min(cellW, cellH) * 1.5;
 
             // Cria o ícone do sensor
             const sensorIcon = document.createElement('div');
             sensorIcon.className = 'sensor-icon';
+            sensorIcon.title = `Clique para alterar status: ${sensor.statusManual ? 'Ocupada' : 'Livre'}`;
+            
             Object.assign(sensorIcon.style, {
                 position: 'absolute',
                 left: `${centerX * cellW + cellW/2 - sensorSize/2}px`,
@@ -1087,8 +1309,9 @@
                 tooltip.className = 'sensor-tooltip';
                 tooltip.innerHTML = `
                     <strong>${sensor.nomeSensor}</strong><br>
-                    Status: ${sensor.statusManual ? 'Ativo' : 'Inativo'}<br>
-                    Vaga: ${vaga.nomeVaga}
+                    Status: ${sensor.statusManual ? 'Ocupada' : 'Livre'}<br>
+                    Vaga: ${vaga.nomeVaga}<br>
+                    <small>Clique para alterar</small>
                 `;
                 tooltip.style.left = `${e.pageX + 10}px`;
                 tooltip.style.top = `${e.pageY - 10}px`;
@@ -1100,11 +1323,15 @@
                         <strong>Sensor:</strong> ${sensor.nomeSensor}<br>
                         <strong>ID:</strong> ${sensor.idSensor}<br>
                         <strong>Status:</strong> 
-                        <span class="badge ${sensor.statusManual ? 'bg-success' : 'bg-danger'}">
-                            ${sensor.statusManual ? 'Ativo' : 'Inativo'}
+                        <span class="badge ${sensor.statusManual ? 'bg-danger' : 'bg-success'}">
+                            ${sensor.statusManual ? 'Ocupada' : 'Livre'}
                         </span><br>
                         <strong>Vaga:</strong> ${vaga.nomeVaga}<br>
-                        <strong>Tipo:</strong> ${vaga.tipoVaga}
+                        <strong>Tipo:</strong> ${vaga.tipoVaga}<br>
+                        <small class="text-info mt-2 d-block">
+                            <i class="fas fa-mouse-pointer me-1"></i>
+                            Clique no sensor para alterar o status
+                        </small>
                     </div>
                 `;
             });
@@ -1122,7 +1349,17 @@
                 if (tooltip) {
                     tooltip.remove();
                 }
-                sensorInfoEl.innerHTML = '<small class="text-muted">Passe o mouse sobre um sensor para ver informações</small>';
+            });
+
+            // ADICIONE ESTE EVENTO DE CLIQUE PARA MUDAR O STATUS
+            sensorIcon.addEventListener('click', () => {
+                const newStatus = !sensor.statusManual;
+                const statusText = newStatus ? 'ocupada' : 'livre';
+                const vagaText = vaga.nomeVaga;
+                
+                if (confirm(`Deseja alterar o status da vaga "${vagaText}" para "${statusText}"?`)) {
+                    updateSensorStatus(sensor.idSensor, newStatus);
+                }
             });
 
             sensoresLayer.appendChild(sensorIcon);
@@ -1178,6 +1415,27 @@
     window.addEventListener('resize', ()=> { 
         initSizesAndPosition(); 
     });
+
+    // === INICIALIZAÇÃO DO DEBUG ===
+    console.log('🎯 Aplicação carregada - Debug CSRF ativado');
+    console.log('🔧 Funções de debug disponíveis:');
+    console.log('   - debugCSRFToken()');
+    console.log('   - testTokenAccess()');
+    console.log('   - window.testSensorUpdate(sensorId, status)');
+    
+    // Debug automático após 2 segundos
+    setTimeout(() => {
+        console.log('🚀 INICIANDO DEBUG AUTOMÁTICO CSRF');
+        debugCSRFToken();
+        testTokenAccess();
+        
+        if (sensoresData && sensoresData.length > 0) {
+            const primeiroSensor = sensoresData[0];
+            console.log('🔧 PARA TESTAR MANUALMENTE NO CONSOLE:');
+            console.log('   testSensorUpdate(' + primeiroSensor.idSensor + ', ' + !primeiroSensor.statusManual + ')');
+            console.log('   debugCSRFToken()');
+        }
+    }, 2000);
 
 })();
 </script>
