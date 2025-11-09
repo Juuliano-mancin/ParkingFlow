@@ -44,6 +44,7 @@
     @endif
 
     {{-- Tabela de clientes --}}
+    <div class="table-responsive">
     <table class="table border border-warning">
         <thead class="bg-white">
             <tr>
@@ -87,5 +88,6 @@
             @endforeach
         </tbody>
     </table>
+    </div>
 </div>
 @endsection
