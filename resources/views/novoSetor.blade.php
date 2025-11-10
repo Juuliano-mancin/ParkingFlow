@@ -3,14 +3,14 @@
 @section('title', 'Novo Setor')
 
 @section('content')
-<div class="container-fluid p-0 vh-100">
-    <div class="row g-0 h-100">
+<div class="container-fluid p-0">
+    <div class="row g-0">
 
         <!-- === VIEWPORT PRINCIPAL - COLUNA 8 === -->
-        <div class="col-8 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
+        <div class="col-lg-8 col-md-7 position-relative" style="background-color:#f0f0f0; overflow:hidden; min-height: 70vh;">
             
             <!-- Indicador de Zoom -->
-            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
+            <div class="zoom-indicator" style="position:absolute; top:10px; right:10px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:4px 8px; border-radius:15px; font-size:11px; font-weight:500; backdrop-filter:blur(10px);">
                 <span id="zoomLevel">100%</span>
             </div>
             
@@ -25,117 +25,152 @@
         </div>
 
         <!-- === PAINEL DE CONTROLE - COLUNA 4 === -->
-        <div class="col-4 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
-            <div class="control-panel h-100 d-flex flex-column p-4 overflow-auto">
+        <div class="col-lg-4 col-md-5 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6; min-height: 70vh;">
+            <div class="control-panel h-100 d-flex flex-column p-3">
                 
                 <!-- Cabeçalho -->
-                <div class="text-center mb-4">
-                    <h4 class="text-primary mb-2">Painel de Controle</h4>
-                    <p class="text-muted small">Gerencie os setores do estacionamento</p>
+                <div class="text-center mb-3">
+                    <h5 class="text-primary mb-1">Painel de Controle</h5>
+                    <p class="text-muted small mb-2">Gerencie os setores do estacionamento</p>
                 </div>
 
-                <!-- === CONTROLES DE VIEWPORT === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h6 class="text-center mb-3 text-secondary">
-                            <i class="fas fa-expand-alt me-2"></i>Controles da Visualização
-                        </h6>
-                        
-                        <!-- Controles de Zoom -->
-                        <div class="mb-3">
-                            <label class="form-label small text-muted mb-2">Zoom</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <button id="btnZoomOut" class="btn btn-outline-secondary flex-grow-1" title="Zoom Out">
-                                    <i class="fas fa-search-minus"></i>
+                <!-- === SISTEMA DE ABAS === -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3">
+                        <!-- Navegação por Abas -->
+                        <ul class="nav nav-pills nav-justified mb-3" id="mainTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-2" style="font-size:0.8rem;" id="visualizacao-tab" data-bs-toggle="pill" data-bs-target="#visualizacao" type="button" role="tab">
+                                    <i class="fas fa-expand-alt me-1"></i>Visualização
                                 </button>
-                                <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom" style="min-width: 60px;">
-                                    100%
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.8rem;" id="setores-tab" data-bs-toggle="pill" data-bs-target="#setores" type="button" role="tab">
+                                    <i class="fas fa-layer-group me-1"></i>Setores
                                 </button>
-                                <button id="btnZoomIn" class="btn btn-outline-secondary flex-grow-1" title="Zoom In">
-                                    <i class="fas fa-search-plus"></i>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.8rem;" id="edicao-tab" data-bs-toggle="pill" data-bs-target="#edicao" type="button" role="tab">
+                                    <i class="fas fa-edit me-1"></i>Edição
                                 </button>
-                            </div>
-                        </div>
+                            </li>
+                        </ul>
 
-                        <!-- Controles de Navegação -->
-                        <div class="mb-3">
-                            <label class="form-label small text-muted mb-2">Navegação</label>
-                            <div class="d-flex flex-column align-items-center">
-                                <button id="btnUp" class="btn btn-outline-secondary mb-1" title="Mover para Cima">
-                                    <i class="fas fa-arrow-up"></i>
-                                </button>
-                                <div class="d-flex gap-1 w-100 justify-content-center">
-                                    <button id="btnLeft" class="btn btn-outline-secondary flex-grow-1" title="Mover para Esquerda">
-                                        <i class="fas fa-arrow-left"></i>
-                                    </button>
-                                    <button id="btnCenter" class="btn btn-outline-primary" title="Centralizar">
-                                        <i class="fas fa-bullseye"></i>
-                                    </button>
-                                    <button id="btnRight" class="btn btn-outline-secondary flex-grow-1" title="Mover para Direita">
-                                        <i class="fas fa-arrow-right"></i>
+                        <!-- Conteúdo das Abas -->
+                        <div class="tab-content">
+                            
+                            <!-- === ABA VISUALIZAÇÃO === -->
+                            <div class="tab-pane fade show active" id="visualizacao" role="tabpanel">
+                                
+                                <!-- Controles de Zoom -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Zoom</label>
+                                    <div class="d-flex gap-1 align-items-center">
+                                        <button id="btnZoomOut" class="btn btn-outline-secondary flex-grow-1 py-1" title="Zoom Out">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        <button id="btnZoomReset" class="btn btn-outline-primary py-1" title="Reset Zoom" style="min-width: 50px;">
+                                            100%
+                                        </button>
+                                        <button id="btnZoomIn" class="btn btn-outline-secondary flex-grow-1 py-1" title="Zoom In">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Controles de Navegação -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Navegação</label>
+                                    <div class="d-flex flex-column align-items-center">
+                                        <button id="btnUp" class="btn btn-outline-secondary mb-1 py-1" title="Mover para Cima">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                        <div class="d-flex gap-1 w-100 justify-content-center">
+                                            <button id="btnLeft" class="btn btn-outline-secondary flex-grow-1 py-1" title="Mover para Esquerda">
+                                                <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                            <button id="btnCenter" class="btn btn-outline-primary py-1" title="Centralizar">
+                                                <i class="fas fa-bullseye"></i>
+                                            </button>
+                                            <button id="btnRight" class="btn btn-outline-secondary flex-grow-1 py-1" title="Mover para Direita">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </button>
+                                        </div>
+                                        <button id="btnDown" class="btn btn-outline-secondary mt-1 py-1" title="Mover para Baixo">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tela Cheia -->
+                                <div class="text-center mt-2">
+                                    <button id="btnFullscreen" class="btn btn-outline-success w-100 py-1" title="Tela Cheia">
+                                        <i class="fas fa-expand me-1"></i>Tela Cheia
                                     </button>
                                 </div>
-                                <button id="btnDown" class="btn btn-outline-secondary mt-1" title="Mover para Baixo">
-                                    <i class="fas fa-arrow-down"></i>
-                                </button>
                             </div>
-                        </div>
 
-                        <!-- Tela Cheia -->
-                        <div class="text-center mt-3">
-                            <button id="btnFullscreen" class="btn btn-outline-success w-100" title="Tela Cheia">
-                                <i class="fas fa-expand me-2"></i>Tela Cheia
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                            <!-- === ABA SETORES === -->
+                            <div class="tab-pane fade" id="setores" role="tabpanel">
+                                
+                                <!-- Gerar Setores -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-layer-group me-1"></i>Gerar Setores
+                                    </h6>
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="number" id="numSetores" class="form-control border-primary" placeholder="Qtd. de setores" min="1" max="10">
+                                        <button id="btnGerar" class="btn btn-primary">
+                                            <i class="fas fa-magic me-1"></i>Gerar
+                                        </button>
+                                    </div>
+                                    <small class="text-muted d-block text-center">
+                                        <i class="fas fa-info-circle me-1"></i>Máximo: 10 setores
+                                    </small>
+                                </div>
 
-                <!-- === GERAR SETORES === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-layer-group me-2"></i>Gerar Setores
-                        </h5>
-                        <div class="input-group mb-3">
-                            <input type="number" id="numSetores" class="form-control border-primary" placeholder="Qtd. de setores" min="1" max="10">
-                            <button id="btnGerar" class="btn btn-primary">
-                                <i class="fas fa-magic me-1"></i>Gerar
-                            </button>
-                        </div>
-                        <small class="text-muted d-block text-center">
-                            <i class="fas fa-info-circle me-1"></i>Máximo: 10 setores
-                        </small>
-                    </div>
-                </div>
+                                <!-- Lista de Setores -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-palette me-1"></i>Setores Criados
+                                    </h6>
+                                    <div id="setoresContainer" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                                </div>
+                            </div>
 
-                <!-- === LISTA DE SETORES === -->
-                <div class="mb-4">
-                    <h6 class="text-center mb-3 text-secondary">
-                        <i class="fas fa-palette me-2"></i>Setores Criados
-                    </h6>
-                    <div id="setoresContainer" class="d-flex flex-wrap justify-content-center gap-3"></div>
-                </div>
+                            <!-- === ABA EDIÇÃO === -->
+                            <div class="tab-pane fade" id="edicao" role="tabpanel">
+                                
+                                <!-- Ferramentas de Edição -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">Ferramentas de Edição</h6>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button id="btnLimpar" class="btn btn-outline-danger btn-sm px-3 py-1">
+                                            <i class="fas fa-broom me-1"></i>Limpar
+                                        </button>
+                                        <button id="btnBorracha" class="btn btn-outline-warning btn-sm px-3 py-1">
+                                            <i class="fas fa-eraser me-1"></i>Borracha
+                                        </button>
+                                    </div>
+                                </div>
 
-                <!-- === CONTROLES DE EDIÇÃO === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h6 class="text-center mb-3 text-secondary">Ferramentas de Edição</h6>
-                        <div class="d-flex justify-content-center gap-3">
-                            <button id="btnLimpar" class="btn btn-outline-danger btn-lg px-4 py-2">
-                                <i class="fas fa-broom me-2"></i>Limpar
-                            </button>
-                            <button id="btnBorracha" class="btn btn-outline-warning btn-lg px-4 py-2">
-                                <i class="fas fa-eraser me-2"></i>Borracha
-                            </button>
+                                <!-- Informações -->
+                                <div class="text-center p-2 border rounded bg-light mt-3">
+                                    <small class="text-muted d-block">Setor Selecionado</small>
+                                    <div id="setorAtualInfo" class="mt-1">
+                                        <small class="text-muted">Nenhum setor selecionado</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- === SALVAR === -->
-                <div class="mt-auto pt-4">
+                <div class="mt-auto pt-3">
                     <div class="text-center">
-                        <button id="btnSalvar" class="btn btn-success btn-lg w-100 py-3 shadow">
-                            <i class="fas fa-save me-2"></i>Salvar Setores
+                        <button id="btnSalvar" class="btn btn-success w-100 py-2 shadow">
+                            <i class="fas fa-save me-1"></i>Salvar Setores
                         </button>
                     </div>
                 </div>
@@ -149,8 +184,8 @@
 <div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content border-0">
-            <div class="modal-header border-0 bg-dark">
-                <h5 class="modal-title text-white">Visualização em Tela Cheia</h5>
+            <div class="modal-header border-0 bg-dark py-2">
+                <h6 class="modal-title text-white">Visualização em Tela Cheia</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0 bg-dark position-relative">
@@ -172,12 +207,13 @@
 <style>
     .btn {
         transition: all 0.3s ease;
-        border-radius: 8px;
+        border-radius: 6px;
+        font-size: 0.875rem;
     }
     
     .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     .btn:active {
@@ -185,12 +221,12 @@
     }
     
     .card {
-        border-radius: 12px;
+        border-radius: 8px;
         transition: transform 0.2s ease;
     }
     
     .card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
     
     .form-control:focus {
@@ -200,14 +236,16 @@
     
     #setoresContainer div {
         transition: all 0.3s ease;
-        border-radius: 8px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        width: 60px !important;
+        height: 60px !important;
     }
     
     #setoresContainer div:hover {
         transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     
     .modal-fullscreen .modal-content {
@@ -254,7 +292,8 @@
 
     /* Ajustes para a estrutura Bootstrap */
     .container-fluid {
-        height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
     }
     
     .row.g-0 {
@@ -262,10 +301,84 @@
         margin-left: 0;
     }
     
-    .row.g-0 > .col-8,
-    .row.g-0 > .col-4 {
+    .row.g-0 > .col-lg-8,
+    .row.g-0 > .col-lg-4,
+    .row.g-0 > .col-md-7,
+    .row.g-0 > .col-md-5 {
         padding-right: 0;
         padding-left: 0;
+    }
+
+    /* Ajustes responsivos */
+    @media (max-width: 768px) {
+        .col-md-7, .col-md-5 {
+            min-height: 50vh !important;
+        }
+        
+        .control-panel {
+            padding: 1rem !important;
+        }
+        
+        .card-body {
+            padding: 0.75rem !important;
+        }
+    }
+
+    /* Melhorar scroll quando necessário */
+    .control-panel {
+        scrollbar-width: thin;
+        scrollbar-color: #007bff #f1f1f1;
+    }
+
+    .control-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .control-panel::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 3px;
+    }
+
+    /* Estilo para as abas */
+    .nav-pills .nav-link {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        font-weight: 600;
+    }
+
+    .nav-pills .nav-link:not(.active) {
+        color: #6c757d;
+        background-color: rgba(0,123,255,0.1);
+    }
+
+    .nav-pills .nav-link:not(.active):hover {
+        background-color: rgba(0,123,255,0.2);
+        color: #007bff;
+    }
+
+    /* Conteúdo das abas */
+    .tab-content {
+        min-height: 200px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 </style>
 
@@ -302,6 +415,10 @@
     let isSelecting = false;
     let selectionStart = null;
     let currentSelection = null;
+
+    // === PINTURA ===
+    let activeSector = null;
+    let eraserMode = false;
 
     // === CARREGAR IMAGEM ===
     const img = new Image();
@@ -815,15 +932,14 @@
         if (fullscreenModal._element.classList.contains('show')) {
             updateFullscreenGrid();
         }
+        
+        // Atualiza informação do setor atual
+        updateSetorAtualInfo();
     }
 
     function getCellAt(row, col) {
         return gridOverlay.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
     }
-
-    // === PINTURA ===
-    let activeSector = null;
-    let eraserMode = false;
 
     // === GERAR SETORES ===
     const cores = [
@@ -842,9 +958,9 @@
 
         for(let i=0;i<num;i++){
             const card=document.createElement('div');
-            card.classList.add('p-3','rounded','text-center','text-white','shadow-sm');
+            card.classList.add('p-2','rounded','text-center','text-white','shadow-sm');
             Object.assign(card.style,{
-                width:'80px',height:'80px',backgroundColor:cores[i],
+                width:'60px',height:'60px',backgroundColor:cores[i],
                 display:'flex',justifyContent:'center',alignItems:'center',cursor:'pointer'
             });
             const setorName = `Setor ${String.fromCharCode(65+i)}`;
@@ -864,15 +980,31 @@
                         c.style.outline='';
                         c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                     });
-                    card.style.outline='3px solid #000';
-                    card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                    card.style.outline='2px solid #000';
+                    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
                     document.getElementById('btnBorracha').classList.remove('btn-warning');
                     document.getElementById('btnBorracha').classList.add('btn-outline-warning');
                 }
+                updateSetorAtualInfo();
             });
             setoresContainer.appendChild(card);
         }
+        
+        updateSetorAtualInfo();
     });
+
+    // === ATUALIZAR INFORMAÇÃO DO SETOR ATUAL ===
+    function updateSetorAtualInfo() {
+        const setorAtualInfo = document.getElementById('setorAtualInfo');
+        if (activeSector) {
+            setorAtualInfo.innerHTML = `
+                <div style="background:${activeSector.color}; width:16px; height:16px; border-radius:3px; display:inline-block; vertical-align:middle;"></div>
+                <strong style="font-size:0.9rem">${activeSector.name}</strong>
+            `;
+        } else {
+            setorAtualInfo.innerHTML = '<small class="text-muted">Nenhum setor selecionado</small>';
+        }
+    }
 
     // === CONTROLES ===
     document.getElementById('btnLimpar').addEventListener('click', ()=>{
@@ -883,6 +1015,8 @@
         if (fullscreenModal._element.classList.contains('show')) {
             updateFullscreenGrid();
         }
+        
+        updateSetorAtualInfo();
     });
 
     document.getElementById('btnBorracha').addEventListener('click', ()=>{
@@ -897,6 +1031,8 @@
             c.style.outline='';
             c.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         });
+        
+        updateSetorAtualInfo();
     });
 
     // === SALVAR ===

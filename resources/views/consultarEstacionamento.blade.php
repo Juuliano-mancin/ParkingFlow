@@ -9,37 +9,22 @@
         <!-- === VIEWPORT PRINCIPAL - COLUNA 9 === -->
         <div class="col-9 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
             
-            <!-- Indicador de Zoom -->
-            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
-                <span id="zoomLevel">100%</span>
+            <!-- Indicador de Zoom Aprimorado -->
+            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.85); color:white; padding:8px 16px; border-radius:25px; font-size:13px; font-weight:600; backdrop-filter:blur(15px); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <i class="fas fa-search me-2"></i><span id="zoomLevel">100%</span>
             </div>
 
-            <!-- CONTROLES DE VISUALIZAÇÃO -->
+            <!-- CONTROLES DE VISUALIZAÇÃO BÁSICOS -->
             <div class="position-absolute top-0 start-0 m-3 z-3">
-                <div class="btn-group shadow-sm">
-                    <button id="toggleSetores" class="btn btn-primary active">
+                <div class="btn-group shadow-lg" style="border-radius:12px; overflow:hidden;">
+                    <button id="toggleSetores" class="btn btn-primary active control-btn">
                         <i class="fas fa-layer-group me-2"></i> Setores
                     </button>
-                    <button id="toggleVagas" class="btn btn-success active">
+                    <button id="toggleVagas" class="btn btn-success active control-btn">
                         <i class="fas fa-car me-2"></i> Vagas
                     </button>
-                    <button id="toggleSensores" class="btn btn-warning active">
+                    <button id="toggleSensores" class="btn btn-warning active control-btn">
                         <i class="fas fa-microchip me-2"></i> Sensores
-                    </button>
-                </div>
-            </div>
-
-            <!-- CONTROLES DE NAVEGAÇÃO -->
-            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 z-3">
-                <div class="btn-group shadow-sm">
-                    <button id="btnZoomOut" class="btn btn-outline-secondary" title="Zoom Out">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                    <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom">
-                        100%
-                    </button>
-                    <button id="btnZoomIn" class="btn btn-outline-secondary" title="Zoom In">
-                        <i class="fas fa-search-plus"></i>
                     </button>
                 </div>
             </div>
@@ -59,126 +44,276 @@
         </div>
 
         <!-- === PAINEL DE CONTROLE - COLUNA 3 === -->
-        <div class="col-3 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
+        <div class="col-3 d-flex flex-column" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 1px solid #dee2e6;">
             <div class="control-panel h-100 d-flex flex-column p-4 overflow-auto">
                 
-                <!-- Cabeçalho -->
+                <!-- Cabeçalho Melhorado -->
                 <div class="text-center mb-4">
-                    <h4 class="text-primary mb-2">Consulta do Estacionamento</h4>
-                    <p class="text-muted small">Visualize setores, vagas e sensores</p>
-                </div>
-
-                <!-- === SELEÇÃO DE PROJETO === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-project-diagram me-2"></i>Selecionar Projeto
-                        </h5>
-                        <label for="selectProjeto" class="form-label small text-muted">Projeto</label>
-                        <select id="selectProjeto" class="form-select border-primary">
-                            @foreach($projetos as $p)
-                                <option value="{{ $p->idProjeto }}"
-                                        data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
-                                        {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
-                                    {{ $p->nomeProjeto }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <div class="bg-primary text-white rounded-3 p-3 shadow-sm mb-3">
+                        <h4 class="mb-1 fw-bold"><i class="fas fa-parking me-2"></i>Consulta do Estacionamento</h4>
+                        <p class="small mb-0 opacity-90">Visualize setores, vagas e sensores em tempo real</p>
                     </div>
                 </div>
 
-                <!-- === LEGENDA DOS SETORES === -->
-                <div class="card border-0 shadow-sm mb-4" id="legendaSetoresCard" style="display:none;">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-layer-group me-2"></i>Legenda dos Setores
-                        </h5>
-                        <div id="legendaSetores" class="d-flex flex-wrap justify-content-center gap-2"></div>
-                    </div>
-                </div>
-
-                <!-- === LEGENDA DOS TIPOS DE VAGA === -->
+                <!-- === SISTEMA DE ABAS MELHORADO === -->
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-tags me-2"></i>Tipos de Vaga
-                        </h5>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(0,123,255,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Carro</div>
-                                <i class="fas fa-car text-primary"></i>
+                    <div class="card-body p-3">
+                        <!-- Navegação por Abas -->
+                        <ul class="nav nav-pills nav-justified mb-3" id="mainTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-2" style="font-size:0.85rem;" id="projeto-tab" data-bs-toggle="pill" data-bs-target="#projeto" type="button" role="tab">
+                                    <i class="fas fa-project-diagram me-1"></i>Projeto
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.85rem;" id="navegacao-tab" data-bs-toggle="pill" data-bs-target="#navegacao" type="button" role="tab">
+                                    <i class="fas fa-arrows-alt me-1"></i>Navegação
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.85rem;" id="legendas-tab" data-bs-toggle="pill" data-bs-target="#legendas" type="button" role="tab">
+                                    <i class="fas fa-tags me-1"></i>Legendas
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.85rem;" id="info-tab" data-bs-toggle="pill" data-bs-target="#info" type="button" role="tab">
+                                    <i class="fas fa-info-circle me-1"></i>Informações
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Conteúdo das Abas -->
+                        <div class="tab-content">
+                            
+                            <!-- === ABA PROJETO === -->
+                            <div class="tab-pane fade show active" id="projeto" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="selectProjeto" class="form-label small text-muted mb-2">
+                                        <i class="fas fa-list me-1"></i>Selecionar Projeto
+                                    </label>
+                                    <select id="selectProjeto" class="form-select border-primary shadow-sm">
+                                        @foreach($projetos as $p)
+                                            <option value="{{ $p->idProjeto }}"
+                                                    data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
+                                                    {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
+                                                {{ $p->nomeProjeto }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Status do Projeto -->
+                                <div class="p-3 border rounded bg-light mt-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-chart-bar me-1"></i>Resumo do Projeto
+                                    </h6>
+                                    <div class="row text-center small">
+                                        <div class="col-6 mb-2">
+                                            <div class="text-primary fw-bold" id="totalVagas">0</div>
+                                            <div class="text-muted">Total Vagas</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <div class="text-success fw-bold" id="vagasLivres">0</div>
+                                            <div class="text-muted">Vagas Livres</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-warning fw-bold" id="totalSetores">0</div>
+                                            <div class="text-muted">Setores</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-info fw-bold" id="sensoresAtivos">0</div>
+                                            <div class="text-muted">Sensores</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Moto</div>
-                                <i class="fas fa-motorcycle text-success"></i>
+
+                            <!-- === ABA NAVEGAÇÃO === -->
+                            <div class="tab-pane fade" id="navegacao" role="tabpanel">
+                                
+                                <!-- Controles de Zoom -->
+                                <div class="mb-4">
+                                    <h6 class="text-center mb-3 text-secondary small">
+                                        <i class="fas fa-search me-1"></i>Controles de Zoom
+                                    </h6>
+                                    <div class="d-flex gap-2 align-items-center justify-content-center">
+                                        <button id="btnZoomOut" class="btn btn-outline-secondary flex-grow-1 py-2" title="Zoom Out">
+                                            <i class="fas fa-search-minus"></i>
+                                            <small class="d-block mt-1">Zoom Out</small>
+                                        </button>
+                                        <button id="btnZoomReset" class="btn btn-outline-primary py-2" title="Reset Zoom" style="min-width: 70px;">
+                                            <span class="fw-bold">100%</span>
+                                            <small class="d-block mt-1">Reset</small>
+                                        </button>
+                                        <button id="btnZoomIn" class="btn btn-outline-secondary flex-grow-1 py-2" title="Zoom In">
+                                            <i class="fas fa-search-plus"></i>
+                                            <small class="d-block mt-1">Zoom In</small>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Controles de Navegação -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-3 text-secondary small">
+                                        <i class="fas fa-arrows-alt me-1"></i>Navegação no Mapa
+                                    </h6>
+                                    <div class="d-flex flex-column align-items-center">
+                                        <button id="btnUp" class="btn btn-outline-secondary mb-2 px-4 py-3" title="Mover para Cima">
+                                            <i class="fas fa-arrow-up fa-lg"></i>
+                                        </button>
+                                        <div class="d-flex gap-2 w-100 justify-content-center align-items-center">
+                                            <button id="btnLeft" class="btn btn-outline-secondary flex-grow-1 py-3" title="Mover para Esquerda">
+                                                <i class="fas fa-arrow-left fa-lg"></i>
+                                            </button>
+                                            <button id="btnCenter" class="btn btn-outline-primary px-4 py-3 mx-2" title="Centralizar Visualização">
+                                                <i class="fas fa-bullseye fa-lg"></i>
+                                            </button>
+                                            <button id="btnRight" class="btn btn-outline-secondary flex-grow-1 py-3" title="Mover para Direita">
+                                                <i class="fas fa-arrow-right fa-lg"></i>
+                                            </button>
+                                        </div>
+                                        <button id="btnDown" class="btn btn-outline-secondary mt-2 px-4 py-3" title="Mover para Baixo">
+                                            <i class="fas fa-arrow-down fa-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Atalhos de Teclado -->
+                                <div class="mt-4 p-3 border rounded bg-light">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-keyboard me-1"></i>Atalhos de Teclado
+                                    </h6>
+                                    <div class="small text-center text-muted">
+                                        <div class="row">
+                                            <div class="col-6 mb-1">
+                                                <kbd class="bg-dark">Roda Mouse</kbd>
+                                                <div class="text-muted">Zoom</div>
+                                            </div>
+                                            <div class="col-6 mb-1">
+                                                <kbd class="bg-dark">Botão Meio</kbd>
+                                                <div class="text-muted">Arrastar</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Idoso</div>
-                                <i class="fas fa-user-friends text-warning"></i>
+
+                            <!-- === ABA LEGENDAS === -->
+                            <div class="tab-pane fade" id="legendas" role="tabpanel">
+                                
+                                <!-- Legenda dos Setores -->
+                                <div class="mb-3" id="legendaSetoresCard">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-layer-group me-1"></i>Setores
+                                    </h6>
+                                    <div id="legendaSetores" class="d-flex flex-column gap-1"></div>
+                                </div>
+
+                                <!-- Legenda dos Tipos de Vaga -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-tags me-1"></i>Tipos de Vaga
+                                    </h6>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(0,123,255,0.6); border-radius:4px;"></div>
+                                            <div class="vaga-label flex-grow-1 small">Carro</div>
+                                            <i class="fas fa-car text-primary"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border-radius:4px;"></div>
+                                            <div class="vaga-label flex-grow-1 small">Moto</div>
+                                            <i class="fas fa-motorcycle text-success"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.6); border-radius:4px;"></div>
+                                            <div class="vaga-label flex-grow-1 small">Idoso</div>
+                                            <i class="fas fa-user-friends text-warning"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(108,117,125,0.6); border-radius:4px;"></div>
+                                            <div class="vaga-label flex-grow-1 small">Deficiente</div>
+                                            <i class="fas fa-wheelchair text-secondary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Legenda dos Sensores -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-microchip me-1"></i>Status dos Sensores
+                                    </h6>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.8); border-radius:50%; border:2px solid #28a745;"></div>
+                                            <div class="sensor-label flex-grow-1 small">Vaga Livre</div>
+                                            <i class="fas fa-check text-success"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.8); border-radius:50%; border:2px solid #dc3545;"></div>
+                                            <div class="sensor-label flex-grow-1 small">Vaga Ocupada</div>
+                                            <i class="fas fa-times text-danger"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item">
+                                            <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.8); border-radius:50%; border:2px dashed #ffc107;"></div>
+                                            <div class="sensor-label flex-grow-1 small">Vaga sem Sensor</div>
+                                            <i class="fas fa-question text-warning"></i>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(108,117,125,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Deficiente</div>
-                                <i class="fas fa-wheelchair text-secondary"></i>
+
+                            <!-- === ABA INFORMAÇÕES === -->
+                            <div class="tab-pane fade" id="info" role="tabpanel">
+                                
+                                <!-- Informações do Sensor Selecionado -->
+                                <div class="mb-3">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-info-circle me-1"></i>Informações do Sensor
+                                    </h6>
+                                    <div id="sensorInfo" class="text-center p-3 border rounded bg-white shadow-sm">
+                                        <div class="text-muted small">
+                                            <i class="fas fa-mouse-pointer me-1"></i>
+                                            Passe o mouse sobre um sensor para ver informações detalhadas
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Estatísticas Rápidas -->
+                                <div class="p-3 border rounded bg-light">
+                                    <h6 class="text-center mb-2 text-secondary small">
+                                        <i class="fas fa-chart-pie me-1"></i>Estatísticas
+                                    </h6>
+                                    <div class="small">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Ocupação:</span>
+                                            <span id="ocupacaoPercentual" class="fw-bold">0%</span>
+                                        </div>
+                                        <div class="progress mb-2" style="height: 6px;">
+                                            <div id="ocupacaoBar" class="progress-bar bg-success" style="width: 0%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Disponibilidade:</span>
+                                            <span id="disponibilidadeText" class="fw-bold text-success">Excelente</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tela Cheia -->
+                                <div class="text-center mt-4">
+                                    <button id="btnFullscreen" class="btn btn-outline-success w-100 py-2" title="Tela Cheia">
+                                        <i class="fas fa-expand me-2"></i>Visualização em Tela Cheia
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- === LEGENDA DOS SENSORES === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-microchip me-2"></i>Status dos Sensores
-                        </h5>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.8); border-radius:50%; border:2px solid #28a745;"></div>
-                                <div class="sensor-label flex-grow-1">Vaga Livre</div>
-                                <i class="fas fa-check text-success"></i>
-                            </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.8); border-radius:50%; border:2px solid #dc3545;"></div>
-                                <div class="sensor-label flex-grow-1">Vaga Ocupada</div>
-                                <i class="fas fa-times text-danger"></i>
-                            </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="sensor-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.8); border-radius:50%; border:2px dashed #ffc107;"></div>
-                                <div class="sensor-label flex-grow-1">Vaga sem Sensor</div>
-                                <i class="fas fa-question text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === INFO DO SENSOR SELECIONADO === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-info-circle me-2"></i>Informações do Sensor
-                        </h5>
-                        <div id="sensorInfo" class="text-center p-3 border rounded bg-light">
-                            <small class="text-muted">Passe o mouse sobre um sensor para ver informações</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === TELA CHEIA === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body text-center">
-                        <button id="btnFullscreen" class="btn btn-outline-success w-100" title="Tela Cheia">
-                            <i class="fas fa-expand me-2"></i>Visualização em Tela Cheia
-                        </button>
                     </div>
                 </div>
 
                 <!-- === VOLTAR === -->
                 <div class="mt-auto pt-4">
                     <div class="text-center">
-                        <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100 py-3">
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100 py-3 shadow-sm">
                             <i class="fas fa-arrow-left me-2"></i>Voltar para Dashboard
                         </a>
                     </div>
@@ -189,15 +324,17 @@
     </div>
 </div>
 
-<!-- Modal para Tela Cheia -->
+<!-- Modal para Tela Cheia Melhorado -->
 <div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content border-0">
-            <div class="modal-header border-0 bg-dark">
-                <h5 class="modal-title text-white">Visualização em Tela Cheia - Consulta</h5>
+        <div class="modal-content border-0 bg-dark">
+            <div class="modal-header border-secondary py-3">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-expand me-2"></i>Visualização em Tela Cheia
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0 bg-dark position-relative">
+            <div class="modal-body p-0 position-relative">
                 <div id="fullscreenViewer" 
                      style="width:100%; height:100%; background-repeat:no-repeat; background-position:center center; background-size:contain;"></div>
                 <div id="fullscreenSetores" 
@@ -206,6 +343,21 @@
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
                 <div id="fullscreenSensores" 
                      style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+                
+                <!-- Controles em Tela Cheia -->
+                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4">
+                    <div class="btn-group shadow">
+                        <button id="fsZoomOut" class="btn btn-outline-light">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button id="fsZoomReset" class="btn btn-outline-light">
+                            100%
+                        </button>
+                        <button id="fsZoomIn" class="btn btn-outline-light">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -237,32 +389,50 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
+    /* === ESTILOS MELHORADOS === */
     .btn {
         transition: all 0.3s ease;
         border-radius: 8px;
+        font-weight: 500;
     }
     
     .btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
     .btn:active {
         transform: translateY(0);
     }
     
+    .control-btn {
+        border-radius: 0 !important;
+        transition: all 0.3s ease;
+    }
+    
+    .control-btn:first-child {
+        border-radius: 8px 0 0 8px !important;
+    }
+    
+    .control-btn:last-child {
+        border-radius: 0 8px 8px 0 !important;
+    }
+    
     .card {
         border-radius: 12px;
-        transition: transform 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.05);
     }
     
     .card:hover {
         transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
     }
     
     .form-control:focus, .form-select:focus {
         border-color: #007bff;
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        transform: translateY(-1px);
     }
     
     .modal-fullscreen .modal-content {
@@ -273,65 +443,63 @@
         background-color: #000;
     }
     
-    /* Estilo para grid em tela cheia */
-    .grid-cell-fullscreen {
-        position: absolute;
-        border: 1px solid rgba(0,132,255,0.2);
-        background-color: transparent;
-        pointer-events: none;
-    }
-
-    /* Indicador de zoom discreto */
+    /* Indicador de zoom melhorado */
     .zoom-indicator {
         transition: all 0.3s ease;
-        opacity: 0.8;
+        opacity: 0.9;
     }
     
     .zoom-indicator:hover {
         opacity: 1;
+        transform: scale(1.05);
     }
 
-    /* Animação sutil para mudanças de zoom */
+    /* Animações melhoradas */
     @keyframes zoomPulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+        50% { transform: scale(1.1); }
         100% { transform: scale(1); }
     }
     
     .zoom-pulse {
-        animation: zoomPulse 0.3s ease;
+        animation: zoomPulse 0.4s ease;
     }
 
-    /* Ajustes para a estrutura Bootstrap */
-    .container-fluid {
-        height: 100vh;
-    }
-    
-    .row.g-0 {
-        margin-right: 0;
-        margin-left: 0;
-    }
-    
-    .row.g-0 > .col-9,
-    .row.g-0 > .col-3 {
-        padding-right: 0;
-        padding-left: 0;
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
+    .fade-in-up {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    /* Grid e elementos interativos */
     .grid-cell { 
-        transition: background-color .06s linear; 
+        transition: background-color 0.2s ease; 
     }
     
     .vaga-icon { 
-        transition: all 0.2s ease; 
+        transition: all 0.3s ease; 
     }
     
     .vaga-icon:hover { 
-        transform: scale(1.1); 
+        transform: scale(1.15); 
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
     }
     
     .vaga-border { 
-        transition: all 0.2s ease; 
+        transition: all 0.3s ease; 
+    }
+    
+    .vaga-border:hover {
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.3);
     }
     
     .sensor-icon {
@@ -340,65 +508,226 @@
     }
     
     .sensor-icon:hover { 
-        transform: scale(1.3);
-        filter: drop-shadow(0 0 8px rgba(255,255,255,0.8));
+        transform: scale(1.4);
+        filter: drop-shadow(0 0 12px rgba(255,255,255,0.9));
     }
     
     .sensor-icon:active {
-        transform: scale(1.1);
+        transform: scale(1.2);
         transition: transform 0.1s ease;
     }
-    
-    .btn-group .btn { 
-        border-radius: 0.375rem !important; 
-        margin: 0 2px; 
+
+    /* Navegação por abas melhorada */
+    .nav-pills .nav-link {
+        font-size: 0.8rem;
+        padding: 0.6rem 0.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-weight: 500;
     }
 
-    /* Melhorias para legibilidade */
-    .vaga-indicador, .sensor-indicador {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
     }
-    
+
+    .nav-pills .nav-link:not(.active) {
+        color: #6c757d;
+        background-color: rgba(0,123,255,0.08);
+    }
+
+    .nav-pills .nav-link:not(.active):hover {
+        background-color: rgba(0,123,255,0.15);
+        color: #007bff;
+        transform: translateY(-1px);
+    }
+
+    /* Conteúdo das abas */
+    .tab-content {
+        min-height: 400px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.4s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Botões de navegação maiores e mais visíveis */
+    .nav-control-btn {
+        padding: 1rem !important;
+        font-size: 1.2rem !important;
+        min-width: 60px;
+    }
+
+    .nav-control-btn-center {
+        padding: 1rem 1.5rem !important;
+        font-size: 1.2rem !important;
+    }
+
+    /* Itens de legenda melhorados */
     .legenda-item {
         transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.08) !important;
     }
     
     .legenda-item:hover {
-        transform: translateX(5px);
+        transform: translateX(8px);
         background-color: rgba(0,123,255,0.05) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    /* Estilo para sensor tooltip */
+    /* Sensor tooltip melhorado */
     .sensor-tooltip {
         position: absolute;
-        background: rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.9);
         color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 10px 14px;
+        border-radius: 8px;
         font-size: 12px;
         z-index: 1000;
         pointer-events: none;
         white-space: nowrap;
         transform: translateY(-100%);
-        margin-top: -10px;
+        margin-top: -12px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
 
-    /* Animação para feedback visual */
+    /* Animações de status */
     @keyframes statusChange {
         0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
+        50% { transform: scale(1.3); }
         100% { transform: scale(1); }
     }
 
     .status-updated {
-        animation: statusChange 0.5s ease;
+        animation: statusChange 0.6s ease;
     }
 
     /* Alertas personalizados */
     .status-alert {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+
+    /* Barra de progresso customizada */
+    .progress {
+        border-radius: 10px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+        transition: width 0.8s ease;
+        border-radius: 10px;
+    }
+
+    /* Scrollbar customizada */
+    .control-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .control-panel::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    }
+
+    /* Efeitos de glassmorphism */
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Estilo para atalhos de teclado */
+    kbd {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Responsividade melhorada */
+    @media (max-width: 1400px) {
+        .col-9 { width: 70% !important; }
+        .col-3 { width: 30% !important; }
+        
+        .nav-pills .nav-link {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.4rem;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .col-9 { width: 65% !important; }
+        .col-3 { width: 35% !important; }
+    }
+
+    @media (max-width: 992px) {
+        .container-fluid {
+            height: auto !important;
+            min-height: 100vh;
+        }
+        
+        .row.g-0 {
+            flex-direction: column;
+        }
+        
+        .col-9, .col-3 {
+            width: 100% !important;
+            height: 50vh;
+        }
+        
+        .col-3 {
+            height: auto;
+            min-height: 50vh;
+        }
+        
+        .nav-control-btn {
+            padding: 0.75rem !important;
+            font-size: 1rem !important;
+        }
+    }
+
+    /* Loading states */
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 </style>
 
@@ -459,102 +788,24 @@
     let showVagas = true;
     let showSensores = true;
 
-    // === CÓDIGO DE DEBUG CSRF ===
-    function debugCSRFToken() {
-        console.log('🔍 === DEBUG CSRF TOKEN ===');
-        
-        // Verifica meta tag
-        const metaToken = document.querySelector('meta[name="csrf-token"]');
-        console.log('📍 Meta token element:', metaToken);
-        
-        if (metaToken) {
-            const tokenContent = metaToken.getAttribute('content');
-            console.log('✅ Meta token content:', tokenContent);
-            console.log('📏 Token length:', tokenContent?.length);
-            console.log('🔢 Token preview:', tokenContent?.substring(0, 20) + '...');
-        } else {
-            console.error('❌ META TOKEN NÃO ENCONTRADO!');
-            
-            // Lista todos os meta tags para debug
-            const allMetaTags = document.querySelectorAll('meta');
-            console.log('📋 Todos os meta tags na página:');
-            allMetaTags.forEach((meta, index) => {
-                console.log(`   ${index + 1}. name="${meta.getAttribute('name')}", content="${meta.getAttribute('content')}"`);
-            });
-        }
-        
-        // Verifica input token como fallback
-        const inputToken = document.querySelector('input[name="_token"]');
-        console.log('📍 Input token element:', inputToken);
-        if (inputToken) {
-            console.log('✅ Input token value:', inputToken.value);
-        }
-        
-        console.log('🔍 === FIM DEBUG CSRF ===');
-    }
-
-    function testTokenAccess() {
-        console.log('🧪 === TESTE DE ACESSO AO TOKEN ===');
-        
-        try {
-            const metaToken = document.querySelector('meta[name="csrf-token"]');
-            if (metaToken) {
-                const token = metaToken.getAttribute('content');
-                console.log('✅ SUCESSO: Token acessível via:', token);
-            } else {
-                console.error('❌ FALHA: Meta token não encontrado');
-            }
-        } catch (error) {
-            console.error('💥 ERRO CRÍTICO ao acessar token:', error);
-        }
-        
-        console.log('🧪 === FIM DO TESTE ===');
-    }
-
-    // === FUNÇÃO updateSensorStatus ATUALIZADA COM DEBUG COMPLETO ===
+    // === FUNÇÃO updateSensorStatus ===
     async function updateSensorStatus(sensorId, newStatus) {
         try {
-            console.log('🚀 === INICIANDO UPDATE SENSOR ===');
-            console.log('📋 Sensor ID:', sensorId, 'Novo status:', newStatus);
-            
-            // DEBUG: Verificar token antes de tudo
-            console.log('🔍 Buscando token CSRF...');
             const metaToken = document.querySelector('meta[name="csrf-token"]');
-            console.log('📍 Elemento meta encontrado:', metaToken);
-            
             if (!metaToken) {
-                console.error('❌ ERRO CRÍTICO: Meta token não encontrado!');
-                console.error('💡 Possíveis causas:');
-                console.error('   - Meta tag não carregou no DOM');
-                console.error('   - Problema de timing no carregamento');
-                console.error('   - Cache do navegador');
-                
-                // Executa debug detalhado
-                debugCSRFToken();
-                
                 showAlert('Erro de configuração. Recarregue a página.', 'danger');
                 return;
             }
             
             const csrfToken = metaToken.getAttribute('content');
-            console.log('📋 Token CSRF:', csrfToken ? `Encontrado (${csrfToken.length} caracteres)` : 'VAZIO/NULO');
-            
             if (!csrfToken) {
-                console.error('❌ ERRO: Token CSRF vazio!');
-                console.error('💡 O meta tag existe mas o content está vazio');
                 showAlert('Token de segurança não encontrado.', 'danger');
                 return;
             }
 
-            console.log('✅ Token válido encontrado!');
-
-            // URL da API - verifique se está correta
             const apiUrl = `/api/sensores/${sensorId}/toggle-status`;
-            console.log('🌐 Fazendo requisição para:', apiUrl);
-
-            console.log('📦 Preparando requisição...');
             const requestOptions = {
-                method: 'POST', // Use POST que é mais compatível
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
@@ -563,82 +814,68 @@
                 },
                 body: JSON.stringify({
                     statusManual: newStatus,
-                    _method: 'PUT' // Simula PUT via POST
+                    _method: 'PUT'
                 })
             };
 
-            console.log('📤 Enviando requisição...', requestOptions);
-
             const response = await fetch(apiUrl, requestOptions);
-
-            console.log('📨 Resposta recebida. Status:', response.status, response.statusText);
 
             if (response.ok) {
                 const result = await response.json();
-                console.log('✅ Sucesso! Resposta da API:', result);
                 
-                // Atualiza os dados locais
                 const sensor = sensoresData.find(s => s.idSensor === sensorId);
                 if (sensor) {
                     sensor.statusManual = newStatus;
-                    console.log('🔄 Sensor local atualizado:', sensor);
-                } else {
-                    console.warn('⚠️ Sensor não encontrado nos dados locais');
                 }
                 
-                // Re-renderiza os sensores
-                console.log('🎨 Re-renderizando sensores...');
                 renderSensores();
+                updateStatistics();
                 
-                // Mostra mensagem de sucesso
                 const statusText = newStatus ? 'ocupada' : 'livre';
                 showAlert(`✅ Status da vaga atualizado para "${statusText}"!`, 'success');
                 
             } else {
-                console.error('❌ Erro na resposta:', response.status, response.statusText);
-                const errorText = await response.text();
-                console.error('📝 Detalhes do erro:', errorText);
-                
-                // Tenta parsear como JSON para mais detalhes
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    console.error('📊 Erro JSON:', errorJson);
-                } catch (e) {
-                    console.error('📄 Erro como texto:', errorText);
-                }
-                
-                throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                throw new Error(`Erro HTTP: ${response.status}`);
             }
             
-            console.log('🎉 === UPDATE SENSOR CONCLUÍDO COM SUCESSO ===');
-            
         } catch (error) {
-            console.error('💥 === ERRO COMPLETO AO ATUALIZAR SENSOR ===');
-            console.error('📌 Error:', error);
-            console.error('📌 Message:', error.message);
-            console.error('📌 Stack:', error.stack);
-            
-            showAlert('❌ Erro ao atualizar status da vaga. Verifique o console para detalhes.', 'danger');
+            console.error('Erro ao atualizar sensor:', error);
+            showAlert('❌ Erro ao atualizar status da vaga.', 'danger');
         }
     }
 
-    // === TESTE MANUAL NO CONSOLE ===
-    // Adiciona função global para teste
-    window.testSensorUpdate = function(sensorId, newStatus) {
-        console.log('🧪 TESTE MANUAL - Sensor:', sensorId, 'Status:', newStatus);
-        return updateSensorStatus(sensorId, newStatus);
-    };
+    // === FUNÇÃO PARA MOSTRAR ALERTAS ===
+    function showAlert(message, type) {
+        const existingAlert = document.querySelector('.status-alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show status-alert position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(alert);
+
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 3000);
+    }
 
     // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
     function initSizesAndPosition() {
         const containerW = viewer.clientWidth;
         const containerH = viewer.clientHeight;
         
-        // Calcula escala para preencher a viewport (cover)
         const scaleX = containerW / imgNaturalW;
         const scaleY = containerH / imgNaturalH;
         
-        // Usa a maior escala para preencher a viewport completamente
         const initialScale = Math.max(scaleX, scaleY) * 1.0;
         
         baseBgW = imgNaturalW;
@@ -647,7 +884,6 @@
         bgW = baseBgW * scaleFactor;
         bgH = baseBgH * scaleFactor;
         
-        // Centraliza a imagem
         posX = (containerW - bgW) / 2;
         posY = (containerH - bgH) / 2;
         
@@ -662,7 +898,6 @@
         viewer.style.backgroundSize = `${bgW}px ${bgH}px`;
         viewer.style.backgroundPosition = `${posX}px ${posY}px`;
         
-        // Aplica transformação nas layers
         setoresLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
         setoresLayer.style.transformOrigin = 'top left';
         vagasLayer.style.transform = `translate(${posX}px, ${posY}px) scale(${scaleFactor})`;
@@ -675,7 +910,6 @@
         const percentage = Math.round(scaleFactor * 100);
         zoomLevelElement.textContent = `${percentage}%`;
         
-        // Adiciona animação sutil
         zoomLevelElement.classList.add('zoom-pulse');
         setTimeout(() => {
             zoomLevelElement.classList.remove('zoom-pulse');
@@ -686,7 +920,6 @@
         const cw = viewer.clientWidth;
         const ch = viewer.clientHeight;
         
-        // Permite um pouco de overscroll para melhor UX
         const marginX = cw * 0.1;
         const marginY = ch * 0.1;
         
@@ -709,16 +942,13 @@
         const mx = clientX - rect.left;
         const my = clientY - rect.top;
         
-        // Calcula a posição relativa antes do zoom
         const relX = (mx - posX) / bgW;
         const relY = (my - posY) / bgH;
 
-        // Aplica o zoom
         scaleFactor = newScale;
         bgW = baseBgW * scaleFactor;
         bgH = baseBgH * scaleFactor;
 
-        // Ajusta a posição para manter o ponto sob o mouse
         posX = mx - relX * bgW;
         posY = my - relY * bgH;
 
@@ -742,7 +972,6 @@
     });
 
     document.getElementById('btnZoomReset').addEventListener('click', () => {
-        // Reset para 100% (escala natural)
         scaleFactor = 1;
         bgW = baseBgW * scaleFactor;
         bgH = baseBgH * scaleFactor;
@@ -760,10 +989,68 @@
         renderSensores();
     });
 
+    // === CONTROLES DE NAVEGAÇÃO (SETAS) ===
+    function initNavigationControls() {
+        const moveStep = 50;
+        
+        document.getElementById('btnUp').addEventListener('click', () => {
+            posY += moveStep;
+            clampPosition();
+            applyTransform();
+            renderVagas();
+            renderSensores();
+        });
+
+        document.getElementById('btnDown').addEventListener('click', () => {
+            posY -= moveStep;
+            clampPosition();
+            applyTransform();
+            renderVagas();
+            renderSensores();
+        });
+
+        document.getElementById('btnLeft').addEventListener('click', () => {
+            posX += moveStep;
+            clampPosition();
+            applyTransform();
+            renderVagas();
+            renderSensores();
+        });
+
+        document.getElementById('btnRight').addEventListener('click', () => {
+            posX -= moveStep;
+            clampPosition();
+            applyTransform();
+            renderVagas();
+            renderSensores();
+        });
+
+        document.getElementById('btnCenter').addEventListener('click', () => {
+            const cw = viewer.clientWidth;
+            const ch = viewer.clientHeight;
+            posX = (cw - bgW) / 2;
+            posY = (ch - bgH) / 2;
+            clampPosition();
+            applyTransform();
+            renderVagas();
+            renderSensores();
+        });
+    }
+
+    // === SISTEMA DE ABAS ===
+    function initTabSystem() {
+        const tabs = document.querySelectorAll('#mainTabs .nav-link');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    }
+
     // === TELA CHEIA ===
     document.getElementById('btnFullscreen').addEventListener('click', () => {
         fullscreenModal.show();
-        // Wait for modal transition to complete
         setTimeout(() => {
             setupFullscreenView();
         }, 300);
@@ -773,29 +1060,23 @@
         const containerW = fullscreenViewer.clientWidth;
         const containerH = fullscreenViewer.clientHeight;
         
-        // Calculate scale to fit (contain)
         const scaleX = containerW / imgNaturalW;
         const scaleY = containerH / imgNaturalH;
         const scale = Math.min(scaleX, scaleY);
         
-        // Calculate actual dimensions
         const actualWidth = imgNaturalW * scale;
         const actualHeight = imgNaturalH * scale;
         
-        // Calculate centering offsets
         const offsetX = (containerW - actualWidth) / 2;
         const offsetY = (containerH - actualHeight) / 2;
         
-        // Update fullscreen viewer
         fullscreenViewer.style.backgroundSize = 'contain';
         fullscreenViewer.style.backgroundPosition = 'center center';
         
-        // Setup fullscreen layers
         setupFullscreenLayers(scale, actualWidth, actualHeight, offsetX, offsetY);
     }
 
     function setupFullscreenLayers(scale, actualWidth, actualHeight, offsetX, offsetY) {
-        // Clear existing content
         fullscreenSetores.innerHTML = '';
         fullscreenVagas.innerHTML = '';
         fullscreenSensores.innerHTML = '';
@@ -821,7 +1102,6 @@
                     position: 'absolute'
                 });
                 
-                // Apply sector color
                 const setorNome = sectorGrid[r][c];
                 if (setorNome && showSetores) {
                     cell.style.backgroundColor = setorColorWithAlpha(setorColors[setorNome]);
@@ -831,12 +1111,10 @@
             }
         }
         
-        // Create vagas
         if (showVagas) {
             renderFullscreenVagas(scale, actualWidth, actualHeight, offsetX, offsetY);
         }
         
-        // Create sensores
         if (showSensores) {
             renderFullscreenSensores(scale, actualWidth, actualHeight, offsetX, offsetY);
         }
@@ -922,7 +1200,6 @@
             const grids = vaga.grids || [];
             if (grids.length === 0) return;
 
-            // Calcula o centro da vaga
             const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
             const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
             const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
@@ -937,7 +1214,6 @@
             const sensorColor = sensor.statusManual ? '#dc3545' : '#28a745';
             const sensorSize = Math.min(cellW, cellH) * 1.5;
 
-            // Create sensor icon
             const sensorIcon = document.createElement('div');
             sensorIcon.className = 'sensor-icon';
             Object.assign(sensorIcon.style, {
@@ -959,6 +1235,37 @@
             `;
 
             fullscreenSensores.appendChild(sensorIcon);
+        });
+    }
+
+    // === CONTROLES DE ZOOM EM TELA CHEIA ===
+    function initFullscreenControls() {
+        document.getElementById('fsZoomIn').addEventListener('click', () => {
+            const rect = fullscreenViewer.getBoundingClientRect();
+            zoomToPoint(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        });
+
+        document.getElementById('fsZoomOut').addEventListener('click', () => {
+            const rect = fullscreenViewer.getBoundingClientRect();
+            zoomToPoint(1/1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        });
+
+        document.getElementById('fsZoomReset').addEventListener('click', () => {
+            scaleFactor = 1;
+            bgW = baseBgW * scaleFactor;
+            bgH = baseBgH * scaleFactor;
+            
+            const cw = viewer.clientWidth;
+            const ch = viewer.clientHeight;
+            posX = (cw - bgW) / 2;
+            posY = (ch - bgH) / 2;
+            
+            clampPosition();
+            applyTransform();
+            updateGrid();
+            updateZoomIndicator();
+            renderVagas();
+            renderSensores();
         });
     }
 
@@ -1005,7 +1312,6 @@
         vagasLayer.style.display = showVagas ? 'block' : 'none';
         sensoresLayer.style.display = showSensores ? 'block' : 'none';
         
-        // Aplica transparência quando múltiplas camadas estão visíveis
         if (showSetores && showVagas && showSensores) {
             setoresLayer.style.opacity = '0.6';
             vagasLayer.style.opacity = '0.8';
@@ -1095,8 +1401,9 @@
                     if(ry>=0 && ry<rows && cx>=0 && cx<cols) sectorGrid[ry][cx] = s.nomeSetor;
                 }
             });
-            buildLegend(Object.values(setorColors));
+            buildLegend();
             renderSetores();
+            updateStatistics();
         } catch(e){
             console.error('Erro ao carregar setores:', e);
         }
@@ -1105,14 +1412,14 @@
     function buildLegend(){
         legendContainer.innerHTML = '';
         const unique = Object.keys(setorColors);
-        unique.forEach(nome=>{
+        unique.forEach(nome => {
             const el = document.createElement('div');
-            el.className = 'd-flex align-items-center gap-2 p-2 border rounded legenda-item';
-            el.style.minWidth = '120px';
-            el.style.justifyContent = 'center';
-            el.style.backgroundColor = 'rgba(255,255,255,0.8)';
-            el.innerHTML = `<div style="width:20px;height:20px;border-radius:4px;background:${setorColors[nome]}; border:1px solid rgba(0,0,0,0.1);"></div>
-                            <small style="font-weight:600">${nome}</small>`;
+            el.className = 'd-flex align-items-center p-2 border rounded bg-white shadow-sm legenda-item';
+            el.style.minWidth = '100%';
+            el.style.justifyContent = 'flex-start';
+            el.innerHTML = `
+                <div style="width:20px;height:20px;border-radius:4px;background:${setorColors[nome]}; border:2px solid rgba(0,0,0,0.1); margin-right:12px;"></div>
+                <small style="font-weight:600" class="text-dark">${nome}</small>`;
             legendContainer.appendChild(el);
         });
         legendCard.style.display = unique.length ? 'block' : 'none';
@@ -1124,6 +1431,7 @@
             const res = await fetch(`/vagas/listar/${idProjeto}`);
             vagasData = await res.json();
             renderVagas();
+            updateStatistics();
         } catch(e){
             console.error('Erro ao carregar vagas:', e);
         }
@@ -1132,15 +1440,14 @@
     // load sensores and vagas inteligentes
     async function loadSensores(){
         try {
-            // Carrega sensores
             const sensoresRes = await fetch('/api/sensores');
             sensoresData = await sensoresRes.json();
             
-            // Carrega associações de sensores
             const vagasInteligentesRes = await fetch('/api/vagas-inteligentes');
             vagasInteligentesData = await vagasInteligentesRes.json();
             
             renderSensores();
+            updateStatistics();
         } catch(e){
             console.error('Erro ao carregar sensores:', e);
         }
@@ -1157,7 +1464,6 @@
             const grids = vaga.grids || [];
             if (grids.length === 0) return;
 
-            // Calcula os limites da vaga
             const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
             const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
             const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
@@ -1173,7 +1479,6 @@
 
             const vagaColor = tipoColors[vaga.tipoVaga] || tipoColors.carro;
 
-            // Cria a borda externa da vaga
             const border = document.createElement('div');
             border.className = 'vaga-border';
             Object.assign(border.style, {
@@ -1190,14 +1495,12 @@
             });
             vagasLayer.appendChild(border);
 
-            // Cria o ícone centralizado (200% maior)
             const icon = document.createElement('div');
             icon.className = 'vaga-icon';
             const baseIconSize = Math.min(cellW, cellH);
             const iconSize = baseIconSize * 2.0;
             const iconType = tipoIcons[vaga.tipoVaga] || 'icon-car';
 
-            // Extrai a cor RGB para o ícone
             const rgbColor = vagaColor.replace('rgba(', '').replace(')', '').split(',');
             const iconColor = `rgb(${rgbColor[0]}, ${rgbColor[1]}, ${rgbColor[2]})`;
 
@@ -1223,33 +1526,6 @@
         });
     }
 
-    // Função para mostrar alertas
-    function showAlert(message, type) {
-        // Remove alertas existentes
-        const existingAlert = document.querySelector('.status-alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-
-        // Cria novo alerta
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show status-alert position-fixed`;
-        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alert.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.body.appendChild(alert);
-
-        // Remove automaticamente após 3 segundos
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, 3000);
-    }
-
     function renderSensores() {
         if (!showSensores) return;
         
@@ -1264,7 +1540,6 @@
             const grids = vaga.grids || [];
             if (grids.length === 0) return;
 
-            // Calcula o centro da vaga
             const minX = Math.min(...grids.map(g => Number(g.posicaoVagaX)));
             const maxX = Math.max(...grids.map(g => Number(g.posicaoVagaX)));
             const minY = Math.min(...grids.map(g => Number(g.posicaoVagaY)));
@@ -1279,7 +1554,6 @@
             const sensorColor = sensor.statusManual ? '#dc3545' : '#28a745';
             const sensorSize = Math.min(cellW, cellH) * 1.5;
 
-            // Cria o ícone do sensor
             const sensorIcon = document.createElement('div');
             sensorIcon.className = 'sensor-icon';
             sensorIcon.title = `Clique para alterar status: ${sensor.statusManual ? 'Ocupada' : 'Livre'}`;
@@ -1303,7 +1577,6 @@
                 </svg>
             `;
 
-            // Adiciona tooltip com informações do sensor
             sensorIcon.addEventListener('mouseenter', (e) => {
                 const tooltip = document.createElement('div');
                 tooltip.className = 'sensor-tooltip';
@@ -1317,7 +1590,6 @@
                 tooltip.style.top = `${e.pageY - 10}px`;
                 document.body.appendChild(tooltip);
 
-                // Atualiza informações no painel
                 sensorInfoEl.innerHTML = `
                     <div class="text-start">
                         <strong>Sensor:</strong> ${sensor.nomeSensor}<br>
@@ -1351,7 +1623,6 @@
                 }
             });
 
-            // ADICIONE ESTE EVENTO DE CLIQUE PARA MUDAR O STATUS
             sensorIcon.addEventListener('click', () => {
                 const newStatus = !sensor.statusManual;
                 const statusText = newStatus ? 'ocupada' : 'livre';
@@ -1364,6 +1635,36 @@
 
             sensoresLayer.appendChild(sensorIcon);
         });
+    }
+
+    // === ESTATÍSTICAS EM TEMPO REAL ===
+    function updateStatistics() {
+        const totalVagas = vagasData.length;
+        const vagasComSensor = vagasInteligentesData.length;
+        const sensoresLivres = sensoresData.filter(s => !s.statusManual).length;
+        const ocupacaoPercentual = totalVagas > 0 ? Math.round((totalVagas - sensoresLivres) / totalVagas * 100) : 0;
+        
+        document.getElementById('totalVagas').textContent = totalVagas;
+        document.getElementById('vagasLivres').textContent = sensoresLivres;
+        document.getElementById('totalSetores').textContent = Object.keys(setorColors).length;
+        document.getElementById('sensoresAtivos').textContent = vagasComSensor;
+        document.getElementById('ocupacaoPercentual').textContent = ocupacaoPercentual + '%';
+        document.getElementById('ocupacaoBar').style.width = ocupacaoPercentual + '%';
+        
+        const ocupacaoBar = document.getElementById('ocupacaoBar');
+        if (ocupacaoPercentual < 50) {
+            ocupacaoBar.className = 'progress-bar bg-success';
+            document.getElementById('disponibilidadeText').textContent = 'Excelente';
+            document.getElementById('disponibilidadeText').className = 'fw-bold text-success';
+        } else if (ocupacaoPercentual < 80) {
+            ocupacaoBar.className = 'progress-bar bg-warning';
+            document.getElementById('disponibilidadeText').textContent = 'Moderada';
+            document.getElementById('disponibilidadeText').className = 'fw-bold text-warning';
+        } else {
+            ocupacaoBar.className = 'progress-bar bg-danger';
+            document.getElementById('disponibilidadeText').textContent = 'Crítica';
+            document.getElementById('disponibilidadeText').className = 'fw-bold text-danger';
+        }
     }
 
     // set projeto (load image, setores, vagas, sensores)
@@ -1408,34 +1709,19 @@
         setProjeto(projetos[0].id);
     }
 
-    // Inicializar controles
+    // === INICIALIZAÇÃO DAS NOVAS FUNCIONALIDADES ===
     initControls();
+    initNavigationControls();
+    initTabSystem();
+    initFullscreenControls();
     updateLayersVisibility();
+
+    // Atualizar estatísticas periodicamente
+    setInterval(updateStatistics, 5000);
 
     window.addEventListener('resize', ()=> { 
         initSizesAndPosition(); 
     });
-
-    // === INICIALIZAÇÃO DO DEBUG ===
-    console.log('🎯 Aplicação carregada - Debug CSRF ativado');
-    console.log('🔧 Funções de debug disponíveis:');
-    console.log('   - debugCSRFToken()');
-    console.log('   - testTokenAccess()');
-    console.log('   - window.testSensorUpdate(sensorId, status)');
-    
-    // Debug automático após 2 segundos
-    setTimeout(() => {
-        console.log('🚀 INICIANDO DEBUG AUTOMÁTICO CSRF');
-        debugCSRFToken();
-        testTokenAccess();
-        
-        if (sensoresData && sensoresData.length > 0) {
-            const primeiroSensor = sensoresData[0];
-            console.log('🔧 PARA TESTAR MANUALMENTE NO CONSOLE:');
-            console.log('   testSensorUpdate(' + primeiroSensor.idSensor + ', ' + !primeiroSensor.statusManual + ')');
-            console.log('   debugCSRFToken()');
-        }
-    }, 2000);
 
 })();
 </script>

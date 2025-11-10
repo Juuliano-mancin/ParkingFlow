@@ -3,46 +3,86 @@
 @section('title', 'Associar Sensores às Vagas')
 
 @section('content')
-<div class="container-fluid p-0 vh-100">
-    <div class="row g-0 h-100">
+<div class="container-fluid p-0">
+    <div class="row g-0">
 
         <!-- === VIEWPORT PRINCIPAL - COLUNA 9 === -->
-        <div class="col-9 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
+        <div class="col-lg-9 col-md-8 position-relative" style="background-color:#1a1a1a; overflow:hidden; min-height: 70vh;">
             
-            <!-- Indicador de Zoom -->
-            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
-                <span id="zoomLevel">100%</span>
+            <!-- Indicador de Zoom e Posição -->
+            <div class="position-absolute top-0 end-0 m-3 z-3">
+                <div class="d-flex flex-column gap-2">
+                    <div class="zoom-indicator bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-search-plus text-primary"></i>
+                            <span id="zoomLevel" class="fw-semibold">100%</span>
+                        </div>
+                    </div>
+                    <div class="position-indicator bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow small">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-arrows-alt text-info"></i>
+                            <span id="positionIndicator">Centro</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- CONTROLES DE VISUALIZAÇÃO -->
             <div class="position-absolute top-0 start-0 m-3 z-3">
-                <div class="btn-group shadow-sm">
-                    <button id="toggleSetores" class="btn btn-primary active">
+                <div class="btn-group shadow-lg">
+                    <button id="toggleSetores" class="btn btn-primary active py-2 px-3" style="font-size:0.8rem;">
                         <i class="fas fa-layer-group me-2"></i> Setores
                     </button>
-                    <button id="toggleVagas" class="btn btn-success active">
+                    <button id="toggleVagas" class="btn btn-success active py-2 px-3" style="font-size:0.8rem;">
                         <i class="fas fa-car me-2"></i> Vagas
                     </button>
                 </div>
             </div>
 
-            <!-- CONTROLES DE NAVEGAÇÃO -->
-            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 z-3">
-                <div class="btn-group shadow-sm">
-                    <button id="btnZoomOut" class="btn btn-outline-secondary" title="Zoom Out">
-                        <i class="fas fa-search-minus"></i>
-                    </button>
-                    <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom">
-                        100%
-                    </button>
-                    <button id="btnZoomIn" class="btn btn-outline-secondary" title="Zoom In">
-                        <i class="fas fa-search-plus"></i>
+            <!-- CONTROLES DE NAVEGAÇÃO FLUTUANTES -->
+            <div class="position-absolute bottom-0 end-0 m-3 z-3">
+                <div class="d-flex flex-column gap-2">
+                    <!-- Controles de Zoom -->
+                    <div class="btn-group shadow-lg">
+                        <button id="btnZoomOut" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Zoom Out" style="font-size:0.8rem;">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button id="btnZoomReset" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Reset Zoom" style="font-size:0.8rem;">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button id="btnZoomIn" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Zoom In" style="font-size:0.8rem;">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Controle de Tela Cheia -->
+                    <button id="btnFullscreen" class="btn btn-dark border-light border-opacity-25 py-2 px-3 shadow-lg" title="Tela Cheia" style="font-size:0.8rem;">
+                        <i class="fas fa-expand-arrows-alt"></i>
                     </button>
                 </div>
             </div>
 
+            <!-- DICA DE NAVEGAÇÃO -->
+            <div class="position-absolute bottom-0 start-0 m-3 z-3">
+                <div class="navigator-hint bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow small">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-mouse-pointer text-warning"></i>
+                        <span>Arraste com o scroll para navegar</span>
+                    </div>
+                </div>
+            </div>
+
             <div id="viewer" 
-                 style="width:100%; height:100%; cursor:pointer; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
+                 class="viewer-container"
+                 style="width:100%; height:100%; cursor:grab; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
+                
+                <!-- Efeito de overlay durante arrasto -->
+                <div id="drag-overlay" class="drag-overlay" style="display:none;">
+                    <div class="drag-indicator">
+                        <i class="fas fa-arrows-alt"></i>
+                        <span>Arrastando...</span>
+                    </div>
+                </div>
                 
                 <!-- Camada de Setores (fundo) -->
                 <div id="setores-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
@@ -53,110 +93,185 @@
         </div>
 
         <!-- === PAINEL DE CONTROLE - COLUNA 3 === -->
-        <div class="col-3 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
-            <div class="control-panel h-100 d-flex flex-column p-4 overflow-auto">
+        <div class="col-lg-3 col-md-4 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6; min-height: 70vh;">
+            <div class="control-panel h-100 d-flex flex-column p-3">
                 
                 <!-- Cabeçalho -->
-                <div class="text-center mb-4">
-                    <h4 class="text-primary mb-2">Associar Sensores</h4>
-                    <p class="text-muted small">Clique nas vagas para associar sensores</p>
+                <div class="text-center mb-3">
+                    <h5 class="text-primary mb-1">Associar Sensores</h5>
+                    <p class="text-muted small mb-2">Clique nas vagas para associar sensores</p>
                 </div>
 
-                <!-- === SELEÇÃO DE PROJETO === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-project-diagram me-2"></i>Selecionar Projeto
-                        </h5>
-                        <label for="selectProjeto" class="form-label small text-muted">Projeto</label>
-                        <select id="selectProjeto" class="form-select border-primary">
-                            @foreach($projetos as $p)
-                                <option value="{{ $p->idProjeto }}"
-                                        data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
-                                        {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
-                                    {{ $p->nomeProjeto }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                <!-- === SISTEMA DE ABAS === -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3">
+                        <!-- Navegação por Abas -->
+                        <ul class="nav nav-pills nav-justified mb-3" id="mainTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-2" style="font-size:0.8rem;" id="projeto-tab" data-bs-toggle="pill" data-bs-target="#projeto" type="button" role="tab">
+                                    <i class="fas fa-project-diagram me-1"></i>Projeto
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.8rem;" id="legenda-tab" data-bs-toggle="pill" data-bs-target="#legenda" type="button" role="tab">
+                                    <i class="fas fa-layer-group me-1"></i>Legenda
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" style="font-size:0.8rem;" id="visualizacao-tab" data-bs-toggle="pill" data-bs-target="#visualizacao" type="button" role="tab">
+                                    <i class="fas fa-eye me-1"></i>Visualização
+                                </button>
+                            </li>
+                        </ul>
 
-                <!-- === LEGENDA DOS SETORES === -->
-                <div class="card border-0 shadow-sm mb-4" id="legendaSetoresCard" style="display:none;">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-layer-group me-2"></i>Legenda dos Setores
-                        </h5>
-                        <div id="legendaSetores" class="d-flex flex-wrap justify-content-center gap-2"></div>
-                    </div>
-                </div>
+                        <!-- Conteúdo das Abas -->
+                        <div class="tab-content">
+                            
+                            <!-- === ABA PROJETO === -->
+                            <div class="tab-pane fade show active" id="projeto" role="tabpanel">
+                                
+                                <!-- Seleção de Projeto -->
+                                <div class="mb-3">
+                                    <label for="selectProjeto" class="form-label small text-muted mb-2">Selecionar Projeto</label>
+                                    <select id="selectProjeto" class="form-select border-primary" style="font-size:0.8rem;">
+                                        @foreach($projetos as $p)
+                                            <option value="{{ $p->idProjeto }}"
+                                                    data-caminho="{{ $p->caminhoPlantaEstacionamento }}"
+                                                    {{ (isset($projeto) && $projeto->idProjeto === $p->idProjeto) ? 'selected' : '' }}>
+                                                {{ $p->nomeProjeto }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                <!-- === LEGENDA DOS TIPOS DE VAGA === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-tags me-2"></i>Tipos de Vaga
-                        </h5>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(0,123,255,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Carro</div>
-                                <i class="fas fa-car text-primary"></i>
+                                <!-- Navegação Rápida -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Navegação Rápida</label>
+                                    <div class="d-grid gap-1">
+                                        <button id="btnCenterView" class="btn btn-outline-primary btn-sm py-1">
+                                            <i class="fas fa-bullseye me-1"></i>Centralizar Vista
+                                        </button>
+                                        <button id="btnFitToScreen" class="btn btn-outline-info btn-sm py-1">
+                                            <i class="fas fa-compress-alt me-1"></i>Ajustar à Tela
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tela Cheia -->
+                                <div class="text-center mt-3">
+                                    <button id="btnFullscreen" class="btn btn-outline-success w-100 py-1" title="Tela Cheia" style="font-size:0.8rem;">
+                                        <i class="fas fa-expand me-1"></i>Tela Cheia
+                                    </button>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Moto</div>
-                                <i class="fas fa-motorcycle text-success"></i>
+
+                            <!-- === ABA LEGENDA === -->
+                            <div class="tab-pane fade" id="legenda" role="tabpanel">
+                                
+                                <!-- Legenda dos Setores -->
+                                <div class="mb-3" id="legendaSetoresCard" style="display:none;">
+                                    <label class="form-label small text-muted mb-2">Legenda dos Setores</label>
+                                    <div id="legendaSetores" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                                </div>
+
+                                <!-- Legenda dos Tipos de Vaga -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Tipos de Vaga</label>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(0,123,255,0.6); border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Carro</div>
+                                            <i class="fas fa-car text-primary" style="font-size:0.8rem;"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(40,167,69,0.6); border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Moto</div>
+                                            <i class="fas fa-motorcycle text-success" style="font-size:0.8rem;"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(255,193,7,0.6); border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Idoso</div>
+                                            <i class="fas fa-user-friends text-warning" style="font-size:0.8rem;"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(108,117,125,0.6); border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Deficiente</div>
+                                            <i class="fas fa-wheelchair text-secondary" style="font-size:0.8rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status das Associações -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Status das Associações</label>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(40,167,69,0.6); border:2px solid #28a745; border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Com Sensor</div>
+                                            <i class="fas fa-check text-success" style="font-size:0.8rem;"></i>
+                                        </div>
+                                        <div class="d-flex align-items-center p-2 border rounded bg-light">
+                                            <div class="vaga-indicador me-2" style="width:16px; height:16px; background-color:rgba(220,53,69,0.6); border:2px dashed #dc3545; border-radius:3px;"></div>
+                                            <div class="vaga-label flex-grow-1" style="font-size:0.8rem;">Sem Sensor</div>
+                                            <i class="fas fa-times text-danger" style="font-size:0.8rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(255,193,7,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Idoso</div>
-                                <i class="fas fa-user-friends text-warning"></i>
-                            </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(108,117,125,0.6); border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Deficiente</div>
-                                <i class="fas fa-wheelchair text-secondary"></i>
+
+                            <!-- === ABA VISUALIZAÇÃO === -->
+                            <div class="tab-pane fade" id="visualizacao" role="tabpanel">
+                                
+                                <!-- Controles de Zoom -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Controles de Zoom</label>
+                                    <div class="d-flex gap-1 align-items-center">
+                                        <button id="btnZoomOutSide" class="btn btn-outline-secondary flex-grow-1 py-1" title="Zoom Out" style="font-size:0.8rem;">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        <button id="btnZoomResetSide" class="btn btn-outline-primary py-1" title="Reset Zoom" style="font-size:0.8rem; min-width: 50px;">
+                                            100%
+                                        </button>
+                                        <button id="btnZoomInSide" class="btn btn-outline-secondary flex-grow-1 py-1" title="Zoom In" style="font-size:0.8rem;">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Filtros de Visualização -->
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted mb-2">Filtros de Visualização</label>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="toggleSetoresCheck" checked>
+                                            <label class="form-check-label small" for="toggleSetoresCheck">
+                                                Mostrar Setores
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="toggleVagasCheck" checked>
+                                            <label class="form-check-label small" for="toggleVagasCheck">
+                                                Mostrar Vagas
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Informações -->
+                                <div class="text-center p-2 border rounded bg-light mt-3">
+                                    <small class="text-muted d-block">Instruções</small>
+                                    <small class="text-muted">Clique em uma vaga para associar um sensor</small>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- === STATUS DAS ASSOCIAÇÕES === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center mb-3">
-                            <i class="fas fa-microchip me-2"></i>Status das Associações
-                        </h5>
-                        <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(40,167,69,0.6); border:2px solid #28a745; border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Com Sensor</div>
-                                <i class="fas fa-check text-success"></i>
-                            </div>
-                            <div class="d-flex align-items-center p-2 border rounded bg-light">
-                                <div class="vaga-indicador me-3" style="width:20px; height:20px; background-color:rgba(220,53,69,0.6); border:2px dashed #dc3545; border-radius:4px;"></div>
-                                <div class="vaga-label flex-grow-1">Sem Sensor</div>
-                                <i class="fas fa-times text-danger"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === TELA CHEIA === -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body text-center">
-                        <button id="btnFullscreen" class="btn btn-outline-success w-100" title="Tela Cheia">
-                            <i class="fas fa-expand me-2"></i>Visualização em Tela Cheia
-                        </button>
                     </div>
                 </div>
 
                 <!-- === VOLTAR === -->
-                <div class="mt-auto pt-4">
+                <div class="mt-auto pt-3">
                     <div class="text-center">
-                        <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100 py-3">
-                            <i class="fas fa-arrow-left me-2"></i>Voltar para Dashboard
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary w-100 py-2">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar para Dashboard
                         </a>
                     </div>
                 </div>
@@ -170,36 +285,36 @@
 <div class="modal fade" id="sensorModal" tabindex="-1" aria-labelledby="sensorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="sensorModalLabel">Associar Sensor à Vaga</h5>
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title" id="sensorModalLabel" style="font-size:0.9rem;">Associar Sensor à Vaga</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Informações da Vaga</h6>
-                        <div id="vagaInfo" class="p-3 border rounded bg-light">
+                        <h6 style="font-size:0.9rem;">Informações da Vaga</h6>
+                        <div id="vagaInfo" class="p-2 border rounded bg-light" style="font-size:0.8rem;">
                             <!-- Informações da vaga serão preenchidas via JavaScript -->
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6>Selecionar Sensor</h6>
-                        <div class="mb-3">
-                            <label for="sensorSelect" class="form-label">Sensores Disponíveis</label>
-                            <select class="form-select" id="sensorSelect">
+                        <h6 style="font-size:0.9rem;">Selecionar Sensor</h6>
+                        <div class="mb-2">
+                            <label for="sensorSelect" class="form-label small">Sensores Disponíveis</label>
+                            <select class="form-select" id="sensorSelect" style="font-size:0.8rem;">
                                 <option value="">Selecione um sensor...</option>
                                 <!-- Sensores serão preenchidos via JavaScript -->
                             </select>
                         </div>
-                        <div id="sensorInfo" class="p-3 border rounded bg-light" style="display:none;">
+                        <div id="sensorInfo" class="p-2 border rounded bg-light" style="display:none; font-size:0.8rem;">
                             <!-- Informações do sensor serão preenchidas via JavaScript -->
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnAssociarSensor">Associar Sensor</button>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary py-1" data-bs-dismiss="modal" style="font-size:0.8rem;">Cancelar</button>
+                <button type="button" class="btn btn-primary py-1" id="btnAssociarSensor" style="font-size:0.8rem;">Associar Sensor</button>
             </div>
         </div>
     </div>
@@ -209,8 +324,8 @@
 <div id="fullscreenModal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content border-0">
-            <div class="modal-header border-0 bg-dark">
-                <h5 class="modal-title text-white">Visualização em Tela Cheia - Associar Sensores</h5>
+            <div class="modal-header border-0 bg-dark py-2">
+                <h6 class="modal-title text-white" style="font-size:0.9rem;">Visualização em Tela Cheia - Associar Sensores</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0 bg-dark position-relative">
@@ -251,74 +366,128 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
+    /* === ESTILOS GERAIS MELHORADOS === */
     .btn {
         transition: all 0.3s ease;
         border-radius: 8px;
+        font-size: 0.875rem;
     }
-    
     .btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
-    
     .btn:active {
         transform: translateY(0);
     }
-    
     .card {
         border-radius: 12px;
         transition: transform 0.2s ease;
     }
-    
     .card:hover {
         transform: translateY(-2px);
     }
-    
     .form-control:focus, .form-select:focus {
         border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        box-shadow: 0 0 0 0.3rem rgba(0,123,255,0.25);
     }
-    
     .modal-fullscreen .modal-content {
         border-radius: 0;
     }
-    
     #fullscreenViewer {
         background-color: #000;
     }
-    
-    /* Estilo para grid em tela cheia */
-    .grid-cell-fullscreen {
+    /* === MELHORIAS NA NAVEGAÇÃO === */
+    .viewer-container {
+        background-color: #1a1a1a;
+        transition: cursor 0.2s ease;
+    }
+    .viewer-container.grabbing {
+        cursor: grabbing !important;
+    }
+    .drag-overlay {
         position: absolute;
-        border: 1px solid rgba(0,132,255,0.2);
-        background-color: transparent;
-        pointer-events: none;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 123, 255, 0.1);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-
-    /* Indicador de zoom discreto */
-    .zoom-indicator {
-        transition: all 0.3s ease;
-        opacity: 0.8;
+    .drag-indicator {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: pulse 1.5s ease-in-out infinite;
     }
-    
-    .zoom-indicator:hover {
-        opacity: 1;
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
     }
-
-    /* Animação sutil para mudanças de zoom */
+    .zoom-indicator, .position-indicator, .navigator-hint {
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    /* === ANIMAÇÕES MELHORADAS === */
     @keyframes zoomPulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+        50% { transform: scale(1.1); }
         100% { transform: scale(1); }
     }
-    
     .zoom-pulse {
-        animation: zoomPulse 0.3s ease;
+        animation: zoomPulse 0.4s ease;
+    }
+    @keyframes slideIn {
+        from { 
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .control-panel {
+        animation: slideIn 0.5s ease-out;
+    }
+
+    .btn-group .btn { 
+        border-radius: 0.375rem !important; 
+        margin: 0 2px; 
+    }
+
+    /* Melhorar scroll quando necessário */
+    .control-panel {
+        scrollbar-width: thin;
+        scrollbar-color: #007bff #f1f1f1;
+    }
+
+    .control-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .control-panel::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 3px;
     }
 
     /* Ajustes para a estrutura Bootstrap */
     .container-fluid {
-        height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
     }
     
     .row.g-0 {
@@ -326,10 +495,27 @@
         margin-left: 0;
     }
     
-    .row.g-0 > .col-9,
-    .row.g-0 > .col-3 {
+    .row.g-0 > .col-lg-9,
+    .row.g-0 > .col-lg-3,
+    .row.g-0 > .col-md-8,
+    .row.g-0 > .col-md-4 {
         padding-right: 0;
         padding-left: 0;
+    }
+
+    /* Ajustes responsivos */
+    @media (max-width: 768px) {
+        .col-md-8, .col-md-4 {
+            min-height: 50vh !important;
+        }
+        
+        .control-panel {
+            padding: 1rem !important;
+        }
+        
+        .card-body {
+            padding: 0.75rem !important;
+        }
     }
 
     .grid-cell { 
@@ -355,11 +541,6 @@
         transform: scale(1.02); 
         box-shadow: 0 0 10px rgba(0,123,255,0.5);
     }
-    
-    .btn-group .btn { 
-        border-radius: 0.375rem !important; 
-        margin: 0 2px; 
-    }
 
     /* Melhorias para legibilidade */
     .vaga-indicador {
@@ -383,6 +564,49 @@
 
     .vaga-sem-sensor {
         border-style: dashed !important;
+    }
+
+    /* Estilo para as abas */
+    .nav-pills .nav-link {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        font-weight: 600;
+    }
+
+    .nav-pills .nav-link:not(.active) {
+        color: #6c757d;
+        background-color: rgba(0,123,255,0.1);
+    }
+
+    .nav-pills .nav-link:not(.active):hover {
+        background-color: rgba(0,123,255,0.2);
+        color: #007bff;
+    }
+
+    /* Conteúdo das abas */
+    .tab-content {
+        min-height: 200px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Ajustes para elementos compactos */
+    #legendaSetores .d-flex {
+        min-width: 100px !important;
+        padding: 6px 8px !important;
     }
 </style>
 
@@ -752,17 +976,39 @@
     function initControls() {
         const toggleSetores = document.getElementById('toggleSetores');
         const toggleVagas = document.getElementById('toggleVagas');
+        const toggleSetoresCheck = document.getElementById('toggleSetoresCheck');
+        const toggleVagasCheck = document.getElementById('toggleVagasCheck');
         
+        // Sincroniza os controles
         toggleSetores.addEventListener('click', () => {
             showSetores = !showSetores;
             toggleSetores.classList.toggle('active', showSetores);
             toggleSetores.classList.toggle('btn-outline-primary', !showSetores);
             toggleSetores.classList.toggle('btn-primary', showSetores);
+            toggleSetoresCheck.checked = showSetores;
             updateLayersVisibility();
         });
         
         toggleVagas.addEventListener('click', () => {
             showVagas = !showVagas;
+            toggleVagas.classList.toggle('active', showVagas);
+            toggleVagas.classList.toggle('btn-outline-success', !showVagas);
+            toggleVagas.classList.toggle('btn-success', showVagas);
+            toggleVagasCheck.checked = showVagas;
+            updateLayersVisibility();
+        });
+
+        // Checkboxes também controlam os botões
+        toggleSetoresCheck.addEventListener('change', () => {
+            showSetores = toggleSetoresCheck.checked;
+            toggleSetores.classList.toggle('active', showSetores);
+            toggleSetores.classList.toggle('btn-outline-primary', !showSetores);
+            toggleSetores.classList.toggle('btn-primary', showSetores);
+            updateLayersVisibility();
+        });
+
+        toggleVagasCheck.addEventListener('change', () => {
+            showVagas = toggleVagasCheck.checked;
             toggleVagas.classList.toggle('active', showVagas);
             toggleVagas.classList.toggle('btn-outline-success', !showVagas);
             toggleVagas.classList.toggle('btn-success', showVagas);
@@ -870,11 +1116,11 @@
         unique.forEach(nome=>{
             const el = document.createElement('div');
             el.className = 'd-flex align-items-center gap-2 p-2 border rounded legenda-item';
-            el.style.minWidth = '120px';
+            el.style.minWidth = '100px';
             el.style.justifyContent = 'center';
             el.style.backgroundColor = 'rgba(255,255,255,0.8)';
-            el.innerHTML = `<div style="width:20px;height:20px;border-radius:4px;background:${setorColors[nome]}; border:1px solid rgba(0,0,0,0.1);"></div>
-                            <small style="font-weight:600">${nome}</small>`;
+            el.innerHTML = `<div style="width:16px;height:16px;border-radius:4px;background:${setorColors[nome]}; border:1px solid rgba(0,0,0,0.1);"></div>
+                            <small style="font-weight:600; font-size:0.8rem;">${nome}</small>`;
             legendContainer.appendChild(el);
         });
         legendCard.style.display = unique.length ? 'block' : 'none';
@@ -1195,6 +1441,241 @@
         initSizesAndPosition(); 
     });
 
+    // === SISTEMA DE NAVEGAÇÃO MELHORADO ===
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartPosX = 0;
+    let dragStartPosY = 0;
+    let lastDragTime = 0;
+    let dragVelocityX = 0;
+    let dragVelocityY = 0;
+    let inertiaAnimationId = null;
+
+    // Eventos de mouse para navegação
+    viewer.addEventListener('mousedown', startDrag);
+    viewer.addEventListener('mousemove', onDrag);
+    viewer.addEventListener('mouseup', endDrag);
+    viewer.addEventListener('mouseleave', endDrag);
+
+    // Eventos de toque para dispositivos móveis
+    viewer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    viewer.addEventListener('touchmove', handleTouchMove, { passive: false });
+       viewer.addEventListener('touchend', handleTouchEnd);
+
+    // Duplo clique para centralizar
+    viewer.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        centerView();
+    });
+
+    function startDrag(e) {
+        // Só inicia arrasto com botão esquerdo ou toque
+        if (e.button !== 0 && e.type !== 'touchstart') return;
+        
+        isDragging = true;
+        const rect = viewer.getBoundingClientRect();
+        
+        if (e.type === 'touchstart') {
+            dragStartX = e.touches[0].clientX - rect.left;
+            dragStartY = e.touches[0].clientY - rect.top;
+        } else {
+            dragStartX = e.clientX - rect.left;
+            dragStartY = e.clientY - rect.top;
+        }
+        
+        dragStartPosX = posX;
+        dragStartPosY = posY;
+        lastDragTime = Date.now();
+        
+        viewer.style.cursor = 'grabbing';
+        showDragOverlay();
+        
+        // Cancela qualquer inércia anterior
+        if (inertiaAnimationId) {
+            cancelAnimationFrame(inertiaAnimationId);
+            inertiaAnimationId = null;
+        }
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const rect = viewer.getBoundingClientRect();
+        let currentX, currentY;
+        
+        if (e.type === 'touchmove') {
+            currentX = e.touches[0].clientX - rect.left;
+            currentY = e.touches[0].clientY - rect.top;
+        } else {
+            currentX = e.clientX - rect.left;
+            currentY = e.clientY - rect.top;
+        }
+        
+        const deltaX = currentX - dragStartX;
+        const deltaY = currentY - dragStartY;
+        
+        // Calcula velocidade para inércia
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastDragTime;
+        
+        if (deltaTime > 0) {
+            dragVelocityX = deltaX / deltaTime;
+            dragVelocityY = deltaY / deltaTime;
+        }
+        
+        lastDragTime = currentTime;
+        
+        // Aplica o movimento
+        posX = dragStartPosX + deltaX;
+        posY = dragStartPosY + deltaY;
+        
+        clampPosition();
+        applyTransform();
+        updatePositionIndicator();
+    }
+
+    function endDrag(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        viewer.style.cursor = 'grab';
+        hideDragOverlay();
+        
+        // Aplica inércia se houver velocidade suficiente
+        if (Math.abs(dragVelocityX) > 0.5 || Math.abs(dragVelocityY) > 0.5) {
+            applyInertia();
+        }
+        
+        dragVelocityX = 0;
+        dragVelocityY = 0;
+    }
+
+    function applyInertia() {
+        const friction = 0.95;
+        const minVelocity = 0.1;
+        
+        function animateInertia() {
+            if (Math.abs(dragVelocityX) < minVelocity && Math.abs(dragVelocityY) < minVelocity) {
+                return;
+            }
+            
+            posX += dragVelocityX * 16; // 16ms frame time
+            posY += dragVelocityY * 16;
+            
+            dragVelocityX *= friction;
+            dragVelocityY *= friction;
+            
+            clampPosition();
+            applyTransform();
+            updatePositionIndicator();
+            
+            inertiaAnimationId = requestAnimationFrame(animateInertia);
+        }
+        
+        inertiaAnimationId = requestAnimationFrame(animateInertia);
+    }
+
+    function showDragOverlay() {
+        const overlay = document.getElementById('drag-overlay');
+        overlay.style.display = 'flex';
+    }
+
+    function hideDragOverlay() {
+        const overlay = document.getElementById('drag-overlay');
+        overlay.style.display = 'none';
+    }
+
+    function updatePositionIndicator() {
+        const indicator = document.getElementById('positionIndicator');
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        
+        const relativeX = -posX / bgW;
+        const relativeY = -posY / bgH;
+        
+        let positionText = 'Centro';
+        
+        if (relativeX < -0.3) positionText = 'Esquerda';
+        if (relativeX > 0.3) positionText = 'Direita';
+        if (relativeY < -0.3) positionText = 'Topo';
+        if (relativeY > 0.3) positionText = 'Base';
+        
+        if (relativeX < -0.3 && relativeY < -0.3) positionText = 'Topo-Esquerda';
+        if (relativeX > 0.3 && relativeY < -0.3) positionText = 'Topo-Direita';
+        if (relativeX < -0.3 && relativeY > 0.3) positionText = 'Base-Esquerda';
+        if (relativeX > 0.3 && relativeY > 0.3) positionText = 'Base-Direita';
+        
+        indicator.textContent = positionText;
+    }
+
+    function centerView() {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        posX = (cw - bgW) / 2;
+        posY = (ch - bgH) / 2;
+        clampPosition();
+        applyTransform();
+        updatePositionIndicator();
+    }
+
+    function fitToScreen() {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        
+        const scaleX = cw / imgNaturalW;
+        const scaleY = ch / imgNaturalH;
+        const newScale = Math.min(scaleX, scaleY) * 0.95; // 95% para dar uma margem
+        
+        scaleFactor = newScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        centerView();
+        updateZoomIndicator();
+        renderVagas();
+    }
+
+    // Suporte a toque
+    function handleTouchStart(e) {
+        if (e.touches.length === 1) {
+            startDrag(e);
+        }
+    }
+    function handleTouchMove(e) {
+        if (e.touches.length === 1) {
+            onDrag(e);
+        }
+    }
+    function handleTouchEnd(e) {
+        endDrag(e);
+    }
+
+    // Adiciona os novos controles de navegação
+    document.getElementById('btnCenterView').addEventListener('click', centerView);
+    document.getElementById('btnFitToScreen').addEventListener('click', fitToScreen);
+
+    // Sincroniza os controles de zoom duplicados
+    document.getElementById('btnZoomInSide').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+    document.getElementById('btnZoomOutSide').addEventListener('click', () => {
+        const rect = viewer.getBoundingClientRect();
+        zoomToPoint(1/1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+    document.getElementById('btnZoomResetSide').addEventListener('click', () => {
+        // Reset para 100% (escala natural)
+        scaleFactor = 1;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        centerView();
+        updateZoomIndicator();
+        renderVagas();
+    });
+
+    // ...restante do código JavaScript permanece igual...
 })();
 </script>
 @endsection
