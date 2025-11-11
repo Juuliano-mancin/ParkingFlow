@@ -17,7 +17,9 @@ class SensorSeeder extends Seeder
             ['nomeSensor' => 'sensor02', 'statusManual' => 0, 'created_at' => now(), 'updated_at' => now()],
             ['nomeSensor' => 'sensor03', 'statusManual' => 0, 'created_at' => now(), 'updated_at' => now()],
             ['nomeSensor' => 'sensor04', 'statusManual' => 0, 'created_at' => now(), 'updated_at' => now()],
-            ['nomeSensor' => 'sensor05', 'statusManual' => 0, 'created_at' => now(), 'updated_at' => now()],
         ]);
+
+        $this->command->info('✅ 4 sensores criados: sensor01, sensor02, sensor03, sensor04');
+        $this->command->info('📋 IDs gerados: 1, 2, 3, 4');
     }
 }

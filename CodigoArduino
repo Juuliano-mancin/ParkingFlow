@@ -1,0 +1,364 @@
+Aqui está o **código completo do Arduino ESP32** atualizado para 4 sensores:
+
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <HX711.h>
+
+// =========================================================================
+// CONFIGURAÇÕES DE REDE E API - AJUSTE ESTES VALORES!
+// =========================================================================
+const char* ssid = "SUA_REDE_WIFI";
+const char* password = "SUA_SENHA_WIFI";
+const char* apiBaseURL = "http://SEU_SERVIDOR/api/arduino"; // Ajuste URL do seu Laravel
+
+// =========================================================================
+// CONFIGURAÇÃO DOS 4 SENSORES HX711 - AJUSTE OS PINOS!
+// =========================================================================
+// Pinos dos Sensores HX711 (ajuste conforme sua ligação)
+#define LOADCELL_DOUT_PIN_1  19
+#define LOADCELL_SCK_PIN_1   18
+
+#define LOADCELL_DOUT_PIN_2  17
+#define LOADCELL_SCK_PIN_2   16
+
+#define LOADCELL_DOUT_PIN_3  15
+#define LOADCELL_SCK_PIN_3   14
+
+#define LOADCELL_DOUT_PIN_4  13
+#define LOADCELL_SCK_PIN_4   12
+
+// Pino do Relé (para ligar/desligar todos os sensores)
+#define RELE_PIN 25
+
+// Objetos HX711 para 4 sensores
+HX711 scale1;
+HX711 scale2;
+HX711 scale3;
+HX711 scale4;
+
+// =========================================================================
+// CONFIGURAÇÕES DOS SENSORES - AJUSTE ESTES VALORES!
+// =========================================================================
+float calibration_factor = -100000;  // Ajuste este valor para calibrar
+float empty_weight = 0;              // Peso quando vazio (ajustar)
+float occupied_threshold = 1000;     // Peso mínimo para considerar ocupado (gramas)
+
+// IDs dos sensores no banco de dados - IDs 1,2,3,4 do seeder
+int sensorIDs[4] = {1, 2, 3, 4};
+
+// Estados anteriores dos sensores
+bool lastStates[4] = {false, false, false, false};
+
+// Controle de tempo
+unsigned long lastReadTime = 0;
+const unsigned long readInterval = 5000; // 5 segundos entre leituras
+
+// =========================================================================
+// SETUP INICIAL
+// =========================================================================
+void setup() {
+  Serial.begin(115200);
+  Serial.println("🚀 Iniciando Sistema de Vagas com 4 Células de Carga");
+  
+  // Configura pino do relé
+  pinMode(RELE_PIN, OUTPUT);
+  digitalWrite(RELE_PIN, HIGH);  // Liga relé (sensores energizados)
+  Serial.println("🔌 Relé ligado - Sensores energizados");
+  
+  // Inicializa os 4 sensores
+  initializeSensors();
+  
+  // Conecta WiFi
+  connectWiFi();
+  
+  // Calibração inicial
+  calibrateSensors();
+  
+  // Verifica status da API
+  checkAPIStatus();
+  
+  Serial.println("✅ Sistema totalmente inicializado!");
+  Serial.println("📊 Monitorando 4 sensores...");
+}
+
+// =========================================================================
+// LOOP PRINCIPAL
+// =========================================================================
+void loop() {
+  // Verifica conexão WiFi periodicamente
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi desconectado! Tentando reconectar...");
+    connectWiFi();
+  }
+  
+  // Lê sensores a cada 5 segundos
+  if (millis() - lastReadTime >= readInterval) {
+    readAndUpdateSensors();
+    lastReadTime = millis();
+  }
+  
+  delay(1000); // Pequeno delay para estabilidade
+}
+
+// =========================================================================
+// INICIALIZAÇÃO DOS 4 SENSORES HX711
+// =========================================================================
+void initializeSensors() {
+  Serial.println("🔧 Inicializando 4 sensores HX711...");
+  
+  scale1.begin(LOADCELL_DOUT_PIN_1, LOADCELL_SCK_PIN_1);
+  scale2.begin(LOADCELL_DOUT_PIN_2, LOADCELL_SCK_PIN_2);
+  scale3.begin(LOADCELL_DOUT_PIN_3, LOADCELL_SCK_PIN_3);
+  scale4.begin(LOADCELL_DOUT_PIN_4, LOADCELL_SCK_PIN_4);
+  
+  // Configura ganho para todos os sensores
+  scale1.set_scale(calibration_factor);
+  scale2.set_scale(calibration_factor);
+  scale3.set_scale(calibration_factor);
+  scale4.set_scale(calibration_factor);
+  
+  // Aguarda estabilização
+  delay(2000);
+  
+  // Zera a tara em todos os sensores
+  scale1.tare();
+  scale2.tare();
+  scale3.tare();
+  scale4.tare();
+  
+  Serial.println("✅ 4 sensores HX711 inicializados e tarados");
+}
+
+// =========================================================================
+// CONEXÃO WIFI
+// =========================================================================
+void connectWiFi() {
+  Serial.print("📡 Conectando à rede: ");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, password);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(1000);
+    Serial.print(".");
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✅ WiFi conectado!");
+    Serial.print("📱 IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\n❌ Falha na conexão WiFi!");
+  }
+}
+
+// =========================================================================
+// LEITURA E ATUALIZAÇÃO DOS 4 SENSORES
+// =========================================================================
+void readAndUpdateSensors() {
+  bool currentStates[4];
+  
+  Serial.println("\n=== LEITURA DOS 4 SENSORES ===");
+  
+  // Lê estado atual de cada sensor
+  currentStates[0] = isSensorOccupied(scale1, 1);
+  currentStates[1] = isSensorOccupied(scale2, 2);
+  currentStates[2] = isSensorOccupied(scale3, 3);
+  currentStates[3] = isSensorOccupied(scale4, 4);
+  
+  // Verifica se houve mudança de estado
+  bool hasChanges = false;
+  for (int i = 0; i < 4; i++) {
+    if (currentStates[i] != lastStates[i]) {
+      hasChanges = true;
+      Serial.print("🔄 Sensor ID ");
+      Serial.print(sensorIDs[i]);
+      Serial.print(" mudou: ");
+      Serial.print(lastStates[i] ? "OCUPADO" : "LIVRE");
+      Serial.print(" → ");
+      Serial.println(currentStates[i] ? "OCUPADO" : "LIVRE");
+      
+      // Atualiza no servidor Laravel
+      updateSensorStatus(sensorIDs[i], currentStates[i]);
+      
+      // Atualiza estado anterior
+      lastStates[i] = currentStates[i];
+    }
+  }
+  
+  if (!hasChanges) {
+    Serial.println("✅ Nenhuma mudança detectada nos 4 sensores");
+  }
+}
+
+// =========================================================================
+// DETECÇÃO DE VAGA OCUPADA/LIVRE
+// =========================================================================
+bool isSensorOccupied(HX711 &sensor, int sensorNum) {
+  if (sensor.is_ready()) {
+    float weight = abs(sensor.get_units());  // Valor absoluto do peso
+    
+    Serial.print("📍 Sensor ");
+    Serial.print(sensorNum);
+    Serial.print(" (ID ");
+    Serial.print(sensorIDs[sensorNum-1]);
+    Serial.print(") - Peso: ");
+    Serial.print(weight);
+    Serial.print("g - ");
+    
+    if (weight > occupied_threshold) {
+      Serial.println("🟥 OCUPADO");
+      return true;
+    } else {
+      Serial.println("🟩 LIVRE");
+      return false;
+    }
+  } else {
+    Serial.print("⚠️ Sensor ");
+    Serial.print(sensorNum);
+    Serial.println(" não está pronto!");
+    return lastStates[sensorNum - 1];  // Mantém último estado conhecido
+  }
+}
+
+// =========================================================================
+// COMUNICAÇÃO COM API LARAVEL - ATUALIZA statusManual
+// =========================================================================
+void updateSensorStatus(int sensorId, bool occupied) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    String url = String(apiBaseURL) + "/sensores/" + sensorId + "/status";
+    
+    Serial.print("🌐 Enviando para: ");
+    Serial.println(url);
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    // Cria JSON para envio - atualiza statusManual
+    DynamicJsonDocument doc(512);
+    doc["statusManual"] = occupied;  // true = ocupado (1), false = livre (0)
+    
+    String jsonString;
+    serializeJson(doc, jsonString);
+    
+    Serial.print("📤 JSON: ");
+    Serial.println(jsonString);
+    
+    // Envia requisição POST
+    int httpResponseCode = http.POST(jsonString);
+    
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.print("✅ Sensor ");
+      Serial.print(sensorId);
+      Serial.print(" atualizado - Status: ");
+      Serial.println(httpResponseCode);
+    } else {
+      Serial.print("❌ Erro na requisição: ");
+      Serial.println(httpResponseCode);
+    }
+    
+    http.end();
+  } else {
+    Serial.println("❌ WiFi desconectado - não foi possível atualizar sensor");
+  }
+}
+
+// =========================================================================
+// CALIBRAÇÃO DOS 4 SENSORES
+// =========================================================================
+void calibrateSensors() {
+  Serial.println("\n⚖️ === CALIBRAÇÃO DOS 4 SENSORES ===");
+  Serial.println("Remova todos os pesos dos sensores em 5 segundos...");
+  delay(5000);
+  
+  Serial.println("Realizando tara...");
+  scale1.tare();
+  scale2.tare();
+  scale3.tare();
+  scale4.tare();
+  
+  Serial.println("✅ Tara realizada! 4 sensores calibrados.");
+}
+
+// =========================================================================
+// VERIFICA STATUS DA API
+// =========================================================================
+void checkAPIStatus() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    String url = String(apiBaseURL) + "/status";
+    
+    Serial.print("🔍 Verificando API: ");
+    Serial.println(url);
+    
+    http.begin(url);
+    int httpCode = http.GET();
+    
+    if (httpCode > 0) {
+      String response = http.getString();
+      Serial.println("✅ API Online: " + response);
+    } else {
+      Serial.print("❌ API Offline - Código: ");
+      Serial.println(httpCode);
+    }
+    
+    http.end();
+  }
+}
+
+// =========================================================================
+// ATUALIZAÇÃO EM LOTE DOS 4 SENSORES
+// =========================================================================
+void updateAllSensorsBatch() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    String url = String(apiBaseURL) + "/sensores/batch-update";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(1024);
+    JsonArray sensores = doc.createNestedArray("sensores");
+    
+    for (int i = 0; i < 4; i++) {
+      JsonObject sensor = sensores.createNestedObject();
+      sensor["id"] = sensorIDs[i];
+      sensor["status"] = lastStates[i];
+    }
+    
+    String jsonString;
+    serializeJson(doc, jsonString);
+    
+    int httpResponseCode = http.POST(jsonString);
+    
+    if (httpResponseCode > 0) {
+      Serial.print("✅ Lote de 4 sensores atualizado - Código: ");
+      Serial.println(httpResponseCode);
+    } else {
+      Serial.print("❌ Erro no lote: ");
+      Serial.println(httpResponseCode);
+    }
+    
+    http.end();
+  }
+}
+```
+
+## **Resumo das Configurações que Você Precisa Ajustar:**
+
+1. **`ssid`** e **`password`** - Sua rede WiFi
+2. **`apiBaseURL`** - URL do seu servidor Laravel
+3. **Pinos HX711** - Ajuste conforme sua ligação física
+4. **`calibration_factor`** - Calibre seus sensores
+5. **`occupied_threshold`** - Ajuste a sensibilidade do peso
+
+**Pronto para usar!** 🎯
