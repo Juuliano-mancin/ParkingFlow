@@ -15,7 +15,6 @@ class VagaInteligente extends Model
     protected $fillable = [
         'idVaga',
         'idSensor',
-        // 'statusManual', // caso venha a ser usado para teste
     ];
 
     public $timestamps = true;

@@ -22,4 +22,10 @@ class Vaga extends Model
     {
         return $this->hasMany(VagaGrid::class, 'idVaga', 'idVaga');
     }
+
+    // NOVO: Relação com VagaInteligente
+    public function vagaInteligente()
+    {
+        return $this->hasOne(VagaInteligente::class, 'idVaga', 'idVaga');
+    }
 }

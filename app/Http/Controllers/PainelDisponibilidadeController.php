@@ -14,26 +14,38 @@ class PainelDisponibilidadeController extends Controller
         // Lista de projetos (para o dropdown)
         $projetos = Projeto::orderBy('nomeProjeto')->get();
 
-        // Se o usuário selecionou um projeto, carrega seus setores e vagas
+        // Se o usuário selecionou um projeto, carrega seus setores e vagas DISPONÍVEIS
         $setores = collect();
         if ($request->has('projeto') && !empty($request->projeto)) {
             $setores = Setor::with('projeto')
                 ->where('idProjeto', $request->projeto)
                 ->withCount([
                     'vagas as vagas_carro' => function ($q) {
-                        $q->where('tipoVaga', 'carro');
+                        $q->where('tipoVaga', 'carro')
+                          ->whereDoesntHave('vagaInteligente.sensor', function ($query) {
+                              $query->where('statusManual', 1); // Vagas LIVRES (statusManual = 0)
+                          });
                     },
                     'vagas as vagas_moto' => function ($q) {
-                        $q->where('tipoVaga', 'moto');
+                        $q->where('tipoVaga', 'moto')
+                          ->whereDoesntHave('vagaInteligente.sensor', function ($query) {
+                              $query->where('statusManual', 1);
+                          });
                     },
                     'vagas as vagas_deficiente' => function ($q) {
-                        $q->where('tipoVaga', 'deficiente');
+                        $q->where('tipoVaga', 'deficiente')
+                          ->whereDoesntHave('vagaInteligente.sensor', function ($query) {
+                              $query->where('statusManual', 1);
+                          });
                     },
                     'vagas as vagas_idoso' => function ($q) {
-                        $q->where('tipoVaga', 'idoso');
+                        $q->where('tipoVaga', 'idoso')
+                          ->whereDoesntHave('vagaInteligente.sensor', function ($query) {
+                              $query->where('statusManual', 1);
+                          });
                     },
                 ])
-                ->distinct() // ADICIONE ESTA LINHA
+                ->distinct()
                 ->get();
         }
 

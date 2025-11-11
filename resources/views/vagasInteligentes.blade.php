@@ -3,61 +3,40 @@
 @section('title', 'Associar Sensores às Vagas')
 
 @section('content')
-<div class="container-fluid p-0">
-    <div class="row g-0">
+<div class="container-fluid p-0 vh-100">
+    <div class="row g-0 h-100">
 
         <!-- === VIEWPORT PRINCIPAL - COLUNA 9 === -->
-        <div class="col-lg-9 col-md-8 position-relative" style="background-color:#1a1a1a; overflow:hidden; min-height: 70vh;">
+        <div class="col-9 position-relative" style="background-color:#f0f0f0; overflow:hidden;">
             
-            <!-- Indicador de Zoom e Posição -->
-            <div class="position-absolute top-0 end-0 m-3 z-3">
-                <div class="d-flex flex-column gap-2">
-                    <div class="zoom-indicator bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-search-plus text-primary"></i>
-                            <span id="zoomLevel" class="fw-semibold">100%</span>
-                        </div>
-                    </div>
-                    <div class="position-indicator bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow small">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-arrows-alt text-info"></i>
-                            <span id="positionIndicator">Centro</span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Indicador de Zoom -->
+            <div class="zoom-indicator" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:500; backdrop-filter:blur(10px);">
+                <span id="zoomLevel">100%</span>
             </div>
 
             <!-- CONTROLES DE VISUALIZAÇÃO -->
             <div class="position-absolute top-0 start-0 m-3 z-3">
-                <div class="btn-group shadow-lg">
-                    <button id="toggleSetores" class="btn btn-primary active py-2 px-3" style="font-size:0.8rem;">
+                <div class="btn-group shadow-sm">
+                    <button id="toggleSetores" class="btn btn-primary active">
                         <i class="fas fa-layer-group me-2"></i> Setores
                     </button>
-                    <button id="toggleVagas" class="btn btn-success active py-2 px-3" style="font-size:0.8rem;">
+                    <button id="toggleVagas" class="btn btn-success active">
                         <i class="fas fa-car me-2"></i> Vagas
                     </button>
                 </div>
             </div>
 
-            <!-- CONTROLES DE NAVEGAÇÃO FLUTUANTES -->
-            <div class="position-absolute bottom-0 end-0 m-3 z-3">
-                <div class="d-flex flex-column gap-2">
-                    <!-- Controles de Zoom -->
-                    <div class="btn-group shadow-lg">
-                        <button id="btnZoomOut" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Zoom Out" style="font-size:0.8rem;">
-                            <i class="fas fa-search-minus"></i>
-                        </button>
-                        <button id="btnZoomReset" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Reset Zoom" style="font-size:0.8rem;">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button id="btnZoomIn" class="btn btn-dark border-light border-opacity-25 py-2 px-3" title="Zoom In" style="font-size:0.8rem;">
-                            <i class="fas fa-search-plus"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Controle de Tela Cheia -->
-                    <button id="btnFullscreen" class="btn btn-dark border-light border-opacity-25 py-2 px-3 shadow-lg" title="Tela Cheia" style="font-size:0.8rem;">
-                        <i class="fas fa-expand-arrows-alt"></i>
+            <!-- CONTROLES DE NAVEGAÇÃO -->
+            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 z-3">
+                <div class="btn-group shadow-sm">
+                    <button id="btnZoomOut" class="btn btn-outline-secondary" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="btnZoomReset" class="btn btn-outline-primary" title="Reset Zoom">
+                        100%
+                    </button>
+                    <button id="btnZoomIn" class="btn btn-outline-secondary" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
                     </button>
                 </div>
             </div>
@@ -66,21 +45,20 @@
             <div class="position-absolute bottom-0 start-0 m-3 z-3">
                 <div class="navigator-hint bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3 shadow small">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-mouse-pointer text-warning"></i>
-                        <span>Arraste com o scroll para navegar</span>
+                        <i class="fas fa-mouse text-warning"></i>
+                        <span>Scroll para navegar • Clique para selecionar vagas</span>
                     </div>
                 </div>
             </div>
 
             <div id="viewer" 
-                 class="viewer-container"
                  style="width:100%; height:100%; cursor:grab; user-select:none; background-repeat:no-repeat; background-position:center center; background-size:contain; position:relative;">
                 
-                <!-- Efeito de overlay durante arrasto -->
-                <div id="drag-overlay" class="drag-overlay" style="display:none;">
-                    <div class="drag-indicator">
+                <!-- Efeito de overlay durante navegação -->
+                <div id="pan-overlay" class="pan-overlay" style="display:none;">
+                    <div class="pan-indicator">
                         <i class="fas fa-arrows-alt"></i>
-                        <span>Arrastando...</span>
+                        <span>Navegando...</span>
                     </div>
                 </div>
                 
@@ -93,8 +71,8 @@
         </div>
 
         <!-- === PAINEL DE CONTROLE - COLUNA 3 === -->
-        <div class="col-lg-3 col-md-4 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6; min-height: 70vh;">
-            <div class="control-panel h-100 d-flex flex-column p-3">
+        <div class="col-3 d-flex flex-column" style="background-color: #f8f9fa; border-left: 1px solid #dee2e6;">
+            <div class="control-panel h-100 d-flex flex-column p-3 overflow-auto">
                 
                 <!-- Cabeçalho -->
                 <div class="text-center mb-3">
@@ -366,45 +344,73 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
-    /* === ESTILOS GERAIS MELHORADOS === */
     .btn {
         transition: all 0.3s ease;
         border-radius: 8px;
-        font-size: 0.875rem;
     }
+    
     .btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    
     .btn:active {
         transform: translateY(0);
     }
+    
     .card {
         border-radius: 12px;
         transition: transform 0.2s ease;
     }
+    
     .card:hover {
         transform: translateY(-2px);
     }
+    
     .form-control:focus, .form-select:focus {
         border-color: #007bff;
-        box-shadow: 0 0 0 0.3rem rgba(0,123,255,0.25);
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
     }
+    
     .modal-fullscreen .modal-content {
         border-radius: 0;
     }
+    
     #fullscreenViewer {
         background-color: #000;
     }
-    /* === MELHORIAS NA NAVEGAÇÃO === */
-    .viewer-container {
-        background-color: #1a1a1a;
-        transition: cursor 0.2s ease;
+    
+    /* Estilo para grid em tela cheia */
+    .grid-cell-fullscreen {
+        position: absolute;
+        border: 1px solid rgba(0,132,255,0.2);
+        background-color: transparent;
+        pointer-events: none;
     }
-    .viewer-container.grabbing {
-        cursor: grabbing !important;
+
+    /* Indicador de zoom discreto */
+    .zoom-indicator {
+        transition: all 0.3s ease;
+        opacity: 0.8;
     }
-    .drag-overlay {
+    
+    .zoom-indicator:hover {
+        opacity: 1;
+    }
+
+    /* Animação sutil para mudanças de zoom */
+    @keyframes zoomPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .zoom-pulse {
+        animation: zoomPulse 0.3s ease;
+    }
+
+    /* Overlay de navegação */
+    .pan-overlay {
         position: absolute;
         top: 0;
         left: 0;
@@ -416,8 +422,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        pointer-events: none;
     }
-    .drag-indicator {
+    
+    .pan-indicator {
         background: rgba(0, 0, 0, 0.8);
         color: white;
         padding: 12px 20px;
@@ -428,66 +436,15 @@
         gap: 8px;
         animation: pulse 1.5s ease-in-out infinite;
     }
+    
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.7; }
     }
-    .zoom-indicator, .position-indicator, .navigator-hint {
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    /* === ANIMAÇÕES MELHORADAS === */
-    @keyframes zoomPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    .zoom-pulse {
-        animation: zoomPulse 0.4s ease;
-    }
-    @keyframes slideIn {
-        from { 
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    .control-panel {
-        animation: slideIn 0.5s ease-out;
-    }
-
-    .btn-group .btn { 
-        border-radius: 0.375rem !important; 
-        margin: 0 2px; 
-    }
-
-    /* Melhorar scroll quando necessário */
-    .control-panel {
-        scrollbar-width: thin;
-        scrollbar-color: #007bff #f1f1f1;
-    }
-
-    .control-panel::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .control-panel::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-    }
-
-    .control-panel::-webkit-scrollbar-thumb {
-        background: #007bff;
-        border-radius: 3px;
-    }
 
     /* Ajustes para a estrutura Bootstrap */
     .container-fluid {
-        max-height: 100vh;
-        overflow: hidden;
+        height: 100vh;
     }
     
     .row.g-0 {
@@ -495,27 +452,10 @@
         margin-left: 0;
     }
     
-    .row.g-0 > .col-lg-9,
-    .row.g-0 > .col-lg-3,
-    .row.g-0 > .col-md-8,
-    .row.g-0 > .col-md-4 {
+    .row.g-0 > .col-9,
+    .row.g-0 > .col-3 {
         padding-right: 0;
         padding-left: 0;
-    }
-
-    /* Ajustes responsivos */
-    @media (max-width: 768px) {
-        .col-md-8, .col-md-4 {
-            min-height: 50vh !important;
-        }
-        
-        .control-panel {
-            padding: 1rem !important;
-        }
-        
-        .card-body {
-            padding: 0.75rem !important;
-        }
     }
 
     .grid-cell { 
@@ -541,6 +481,11 @@
         transform: scale(1.02); 
         box-shadow: 0 0 10px rgba(0,123,255,0.5);
     }
+    
+    .btn-group .btn { 
+        border-radius: 0.375rem !important; 
+        margin: 0 2px; 
+    }
 
     /* Melhorias para legibilidade */
     .vaga-indicador {
@@ -564,6 +509,19 @@
 
     .vaga-sem-sensor {
         border-style: dashed !important;
+    }
+
+    /* Estados do cursor */
+    .viewer-panning {
+        cursor: grabbing !important;
+    }
+    
+    .viewer-normal {
+        cursor: grab;
+    }
+    
+    .viewer-hover-vaga {
+        cursor: pointer;
     }
 
     /* Estilo para as abas */
@@ -665,6 +623,126 @@
     let showSetores = true;
     let showVagas = true;
 
+    // === SISTEMA DE NAVEGAÇÃO COM SCROLL DO MOUSE ===
+    let isPanning = false;
+    let panStartX = 0;
+    let panStartY = 0;
+    let panStartPosX = 0;
+    let panStartPosY = 0;
+
+    // Eventos para navegação com botão do scroll
+    viewer.addEventListener('mousedown', handleMouseDown);
+    viewer.addEventListener('mousemove', handleMouseMove);
+    viewer.addEventListener('mouseup', handleMouseUp);
+    viewer.addEventListener('mouseleave', handleMouseUp);
+    viewer.addEventListener('wheel', handleWheel);
+
+    // Eventos de toque para dispositivos móveis
+    viewer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    viewer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    viewer.addEventListener('touchend', handleTouchEnd);
+
+    function handleMouseDown(e) {
+        // Só inicia pan com botão do meio (scroll)
+        if (e.button !== 1) return;
+        
+        e.preventDefault();
+        startPan(e.clientX, e.clientY);
+    }
+
+    function handleMouseMove(e) {
+        if (!isPanning) return;
+        e.preventDefault();
+        
+        const rect = viewer.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        const deltaX = currentX - panStartX;
+        const deltaY = currentY - panStartY;
+        
+        // Aplica o movimento
+        posX = panStartPosX + deltaX;
+        posY = panStartPosY + deltaY;
+        
+        clampPosition();
+        applyTransform();
+    }
+
+    function handleMouseUp(e) {
+        if (!isPanning) return;
+        isPanning = false;
+        
+        viewer.classList.remove('viewer-panning');
+        viewer.classList.add('viewer-normal');
+        hidePanOverlay();
+    }
+
+    function handleWheel(e) {
+        e.preventDefault();
+        const zoomSpeed = 1.12;
+        const delta = e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed;
+        zoomToPoint(delta, e.clientX, e.clientY);
+    }
+
+    function startPan(clientX, clientY) {
+        isPanning = true;
+        const rect = viewer.getBoundingClientRect();
+        
+        panStartX = clientX - rect.left;
+        panStartY = clientY - rect.top;
+        
+        panStartPosX = posX;
+        panStartPosY = posY;
+        
+        viewer.classList.remove('viewer-normal');
+        viewer.classList.add('viewer-panning');
+        showPanOverlay();
+    }
+
+    function showPanOverlay() {
+        const overlay = document.getElementById('pan-overlay');
+        overlay.style.display = 'flex';
+    }
+
+    function hidePanOverlay() {
+        const overlay = document.getElementById('pan-overlay');
+        overlay.style.display = 'none';
+    }
+
+    // Suporte a toque
+    function handleTouchStart(e) {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            startPan(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }
+
+    function handleTouchMove(e) {
+        if (!isPanning) return;
+        e.preventDefault();
+        
+        const rect = viewer.getBoundingClientRect();
+        const currentX = e.touches[0].clientX - rect.left;
+        const currentY = e.touches[0].clientY - rect.top;
+        
+        const deltaX = currentX - panStartX;
+        const deltaY = currentY - panStartY;
+        
+        posX = panStartPosX + deltaX;
+        posY = panStartPosY + deltaY;
+        
+        clampPosition();
+        applyTransform();
+    }
+
+    function handleTouchEnd(e) {
+        isPanning = false;
+        viewer.classList.remove('viewer-panning');
+        viewer.classList.add('viewer-normal');
+        hidePanOverlay();
+    }
+
     // === INICIALIZAÇÃO COM ZOOM PARA PREENCHER A VIEWPORT ===
     function initSizesAndPosition() {
         const containerW = viewer.clientWidth;
@@ -726,14 +804,6 @@
         posX = Math.min(marginX, Math.max(cw - bgW - marginX, posX));
         posY = Math.min(marginY, Math.max(ch - bgH - marginY, posY));
     }
-
-    // === ZOOM ===
-    viewer.addEventListener('wheel', e => {
-        e.preventDefault();
-        const zoomSpeed = 1.12;
-        const delta = e.deltaY < 0 ? zoomSpeed : 1 / zoomSpeed;
-        zoomToPoint(delta, e.clientX, e.clientY);
-    });
 
     function zoomToPoint(delta, clientX, clientY) {
         const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scaleFactor * delta));
@@ -1217,7 +1287,10 @@
             });
 
             // Adiciona evento de clique na borda
-            border.addEventListener('click', () => abrirModalSensor(vaga));
+            border.addEventListener('click', (e) => {
+                e.stopPropagation(); // Previne que o evento se propague para o viewer
+                abrirModalSensor(vaga);
+            });
             vagasLayer.appendChild(border);
 
             // Cria o ícone centralizado (200% maior)
@@ -1251,7 +1324,10 @@
             `;
 
             // Adiciona evento de clique no ícone
-            icon.addEventListener('click', () => abrirModalSensor(vaga));
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation(); // Previne que o evento se propague para o viewer
+                abrirModalSensor(vaga);
+            });
             vagasLayer.appendChild(icon);
 
             // Adiciona ícone de sensor se a vaga tiver sensor associado
@@ -1437,221 +1513,6 @@
     initControls();
     updateLayersVisibility();
 
-    window.addEventListener('resize', ()=> { 
-        initSizesAndPosition(); 
-    });
-
-    // === SISTEMA DE NAVEGAÇÃO MELHORADO ===
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let dragStartPosX = 0;
-    let dragStartPosY = 0;
-    let lastDragTime = 0;
-    let dragVelocityX = 0;
-    let dragVelocityY = 0;
-    let inertiaAnimationId = null;
-
-    // Eventos de mouse para navegação
-    viewer.addEventListener('mousedown', startDrag);
-    viewer.addEventListener('mousemove', onDrag);
-    viewer.addEventListener('mouseup', endDrag);
-    viewer.addEventListener('mouseleave', endDrag);
-
-    // Eventos de toque para dispositivos móveis
-    viewer.addEventListener('touchstart', handleTouchStart, { passive: false });
-    viewer.addEventListener('touchmove', handleTouchMove, { passive: false });
-       viewer.addEventListener('touchend', handleTouchEnd);
-
-    // Duplo clique para centralizar
-    viewer.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        centerView();
-    });
-
-    function startDrag(e) {
-        // Só inicia arrasto com botão esquerdo ou toque
-        if (e.button !== 0 && e.type !== 'touchstart') return;
-        
-        isDragging = true;
-        const rect = viewer.getBoundingClientRect();
-        
-        if (e.type === 'touchstart') {
-            dragStartX = e.touches[0].clientX - rect.left;
-            dragStartY = e.touches[0].clientY - rect.top;
-        } else {
-            dragStartX = e.clientX - rect.left;
-            dragStartY = e.clientY - rect.top;
-        }
-        
-        dragStartPosX = posX;
-        dragStartPosY = posY;
-        lastDragTime = Date.now();
-        
-        viewer.style.cursor = 'grabbing';
-        showDragOverlay();
-        
-        // Cancela qualquer inércia anterior
-        if (inertiaAnimationId) {
-            cancelAnimationFrame(inertiaAnimationId);
-            inertiaAnimationId = null;
-        }
-    }
-
-    function onDrag(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        
-        const rect = viewer.getBoundingClientRect();
-        let currentX, currentY;
-        
-        if (e.type === 'touchmove') {
-            currentX = e.touches[0].clientX - rect.left;
-            currentY = e.touches[0].clientY - rect.top;
-        } else {
-            currentX = e.clientX - rect.left;
-            currentY = e.clientY - rect.top;
-        }
-        
-        const deltaX = currentX - dragStartX;
-        const deltaY = currentY - dragStartY;
-        
-        // Calcula velocidade para inércia
-        const currentTime = Date.now();
-        const deltaTime = currentTime - lastDragTime;
-        
-        if (deltaTime > 0) {
-            dragVelocityX = deltaX / deltaTime;
-            dragVelocityY = deltaY / deltaTime;
-        }
-        
-        lastDragTime = currentTime;
-        
-        // Aplica o movimento
-        posX = dragStartPosX + deltaX;
-        posY = dragStartPosY + deltaY;
-        
-        clampPosition();
-        applyTransform();
-        updatePositionIndicator();
-    }
-
-    function endDrag(e) {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        viewer.style.cursor = 'grab';
-        hideDragOverlay();
-        
-        // Aplica inércia se houver velocidade suficiente
-        if (Math.abs(dragVelocityX) > 0.5 || Math.abs(dragVelocityY) > 0.5) {
-            applyInertia();
-        }
-        
-        dragVelocityX = 0;
-        dragVelocityY = 0;
-    }
-
-    function applyInertia() {
-        const friction = 0.95;
-        const minVelocity = 0.1;
-        
-        function animateInertia() {
-            if (Math.abs(dragVelocityX) < minVelocity && Math.abs(dragVelocityY) < minVelocity) {
-                return;
-            }
-            
-            posX += dragVelocityX * 16; // 16ms frame time
-            posY += dragVelocityY * 16;
-            
-            dragVelocityX *= friction;
-            dragVelocityY *= friction;
-            
-            clampPosition();
-            applyTransform();
-            updatePositionIndicator();
-            
-            inertiaAnimationId = requestAnimationFrame(animateInertia);
-        }
-        
-        inertiaAnimationId = requestAnimationFrame(animateInertia);
-    }
-
-    function showDragOverlay() {
-        const overlay = document.getElementById('drag-overlay');
-        overlay.style.display = 'flex';
-    }
-
-    function hideDragOverlay() {
-        const overlay = document.getElementById('drag-overlay');
-        overlay.style.display = 'none';
-    }
-
-    function updatePositionIndicator() {
-        const indicator = document.getElementById('positionIndicator');
-        const cw = viewer.clientWidth;
-        const ch = viewer.clientHeight;
-        
-        const relativeX = -posX / bgW;
-        const relativeY = -posY / bgH;
-        
-        let positionText = 'Centro';
-        
-        if (relativeX < -0.3) positionText = 'Esquerda';
-        if (relativeX > 0.3) positionText = 'Direita';
-        if (relativeY < -0.3) positionText = 'Topo';
-        if (relativeY > 0.3) positionText = 'Base';
-        
-        if (relativeX < -0.3 && relativeY < -0.3) positionText = 'Topo-Esquerda';
-        if (relativeX > 0.3 && relativeY < -0.3) positionText = 'Topo-Direita';
-        if (relativeX < -0.3 && relativeY > 0.3) positionText = 'Base-Esquerda';
-        if (relativeX > 0.3 && relativeY > 0.3) positionText = 'Base-Direita';
-        
-        indicator.textContent = positionText;
-    }
-
-    function centerView() {
-        const cw = viewer.clientWidth;
-        const ch = viewer.clientHeight;
-        posX = (cw - bgW) / 2;
-        posY = (ch - bgH) / 2;
-        clampPosition();
-        applyTransform();
-        updatePositionIndicator();
-    }
-
-    function fitToScreen() {
-        const cw = viewer.clientWidth;
-        const ch = viewer.clientHeight;
-        
-        const scaleX = cw / imgNaturalW;
-        const scaleY = ch / imgNaturalH;
-        const newScale = Math.min(scaleX, scaleY) * 0.95; // 95% para dar uma margem
-        
-        scaleFactor = newScale;
-        bgW = baseBgW * scaleFactor;
-        bgH = baseBgH * scaleFactor;
-        
-        centerView();
-        updateZoomIndicator();
-        renderVagas();
-    }
-
-    // Suporte a toque
-    function handleTouchStart(e) {
-        if (e.touches.length === 1) {
-            startDrag(e);
-        }
-    }
-    function handleTouchMove(e) {
-        if (e.touches.length === 1) {
-            onDrag(e);
-        }
-    }
-    function handleTouchEnd(e) {
-        endDrag(e);
-    }
-
     // Adiciona os novos controles de navegação
     document.getElementById('btnCenterView').addEventListener('click', centerView);
     document.getElementById('btnFitToScreen').addEventListener('click', fitToScreen);
@@ -1675,7 +1536,36 @@
         renderVagas();
     });
 
-    // ...restante do código JavaScript permanece igual...
+    function centerView() {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        posX = (cw - bgW) / 2;
+        posY = (ch - bgH) / 2;
+        clampPosition();
+        applyTransform();
+    }
+
+    function fitToScreen() {
+        const cw = viewer.clientWidth;
+        const ch = viewer.clientHeight;
+        
+        const scaleX = cw / imgNaturalW;
+        const scaleY = ch / imgNaturalH;
+        const newScale = Math.min(scaleX, scaleY) * 0.95; // 95% para dar uma margem
+        
+        scaleFactor = newScale;
+        bgW = baseBgW * scaleFactor;
+        bgH = baseBgH * scaleFactor;
+        
+        centerView();
+        updateZoomIndicator();
+        renderVagas();
+    }
+
+    window.addEventListener('resize', ()=> { 
+        initSizesAndPosition(); 
+    });
+
 })();
 </script>
 @endsection

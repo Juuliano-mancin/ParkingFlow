@@ -57,10 +57,27 @@
         </div>
 
         <div class="mt-4 text-end">
-            <h5>🕒 Atualizado às {{ now()->format('H:i:s') }}</h5>
+            <h5>🕒 Atualizado às <span id="current-time">{{ now()->format('H:i:s') }}</span></h5>
         </div>
     @else
         <p class="text-muted">Selecione um estacionamento para visualizar os setores.</p>
     @endif
 </div>
+
+{{-- Script para auto-atualização a cada segundo --}}
+<script>
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('pt-BR');
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// Atualiza o tempo a cada segundo
+setInterval(updateTime, 1000);
+
+// Recarrega a página a cada 5 segundos para atualizar os dados
+setTimeout(function() {
+    window.location.reload();
+}, 5000);
+</script>
 @endsection
