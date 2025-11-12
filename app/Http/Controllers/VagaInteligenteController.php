@@ -8,6 +8,7 @@ use App\Models\Sensor;
 use App\Models\VagaInteligente;
 use App\Models\Projeto;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class VagaInteligenteController extends Controller
 {
@@ -136,6 +137,203 @@ class VagaInteligenteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao atualizar sensor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // =========================================================================
+    // MÉTODOS ESPECÍFICOS PARA INTEGRAÇÃO COM ARDUINO
+    // =========================================================================
+
+    /**
+     * Método específico para Arduino atualizar status
+     * POST /api/arduino/sensores/{id}/status
+     */
+    public function atualizarStatusArduino(Request $request, $id): JsonResponse
+    {
+        try {
+            // Validação específica para dados do Arduino
+            $request->validate([
+                'statusManual' => 'required|boolean',
+                'timestamp' => 'sometimes|date' // opcional para log
+            ]);
+
+            $sensor = Sensor::find($id);
+            
+            if (!$sensor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sensor não encontrado'
+                ], 404);
+            }
+
+            // Log para debug
+            Log::info('Arduino atualizando sensor', [
+                'sensor_id' => $id,
+                'status_anterior' => $sensor->statusManual,
+                'status_novo' => $request->statusManual,
+                'timestamp' => $request->timestamp ?? now()
+            ]);
+
+            // Atualiza apenas o campo necessário
+            $sensor->update([
+                'statusManual' => $request->statusManual
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status atualizado com sucesso',
+                'sensor' => [
+                    'id' => $sensor->idSensor,
+                    'nome' => $sensor->nomeSensor,
+                    'status' => $sensor->statusManual,
+                    'ocupado' => (bool)$sensor->statusManual
+                ],
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro Arduino ao atualizar sensor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Método para Arduino consultar status de todos os sensores
+     * GET /api/arduino/sensores
+     */
+    public function getSensoresArduino(): JsonResponse
+    {
+        try {
+            $sensores = Sensor::select('idSensor', 'nomeSensor', 'statusManual')
+                             ->get()
+                             ->map(function($sensor) {
+                                 return [
+                                     'id' => $sensor->idSensor,
+                                     'nome' => $sensor->nomeSensor,
+                                     'status' => (bool)$sensor->statusManual,
+                                     'ocupado' => (bool)$sensor->statusManual // campo adicional para clareza
+                                 ];
+                             });
+
+            return response()->json([
+                'success' => true,
+                'sensores' => $sensores,
+                'total' => $sensores->count(),
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro Arduino ao buscar sensores: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Método para Arduino consultar status de um sensor específico
+     * GET /api/arduino/sensores/{id}
+     */
+    public function getSensorArduino($id): JsonResponse
+    {
+        try {
+            $sensor = Sensor::find($id);
+            
+            if (!$sensor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sensor não encontrado'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'sensor' => [
+                    'id' => $sensor->idSensor,
+                    'nome' => $sensor->nomeSensor,
+                    'status' => (bool)$sensor->statusManual,
+                    'ocupado' => (bool)$sensor->statusManual
+                ],
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro Arduino ao buscar sensor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Endpoint de saúde da API para Arduino
+     * GET /api/arduino/status
+     */
+    public function statusArduino(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'online',
+            'message' => 'API Arduino funcionando',
+            'timestamp' => now()->toISOString(),
+            'versao' => '1.0',
+            'sensores_cadastrados' => Sensor::count()
+        ]);
+    }
+
+    /**
+     * Método para Arduino atualizar status em lote (múltiplos sensores)
+     * POST /api/arduino/sensores/batch-update
+     */
+    public function atualizarStatusLoteArduino(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'sensores' => 'required|array',
+                'sensores.*.id' => 'required|exists:tb_sensores,idSensor',
+                'sensores.*.status' => 'required|boolean'
+            ]);
+
+            $resultados = [];
+            
+            foreach ($request->sensores as $sensorData) {
+                $sensor = Sensor::find($sensorData['id']);
+                $statusAnterior = $sensor->statusManual;
+                
+                $sensor->update(['statusManual' => $sensorData['status']]);
+                
+                $resultados[] = [
+                    'id' => $sensor->idSensor,
+                    'nome' => $sensor->nomeSensor,
+                    'status_anterior' => $statusAnterior,
+                    'status_novo' => $sensorData['status'],
+                    'sucesso' => true
+                ];
+            }
+
+            Log::info('Arduino atualizou sensores em lote', [
+                'total_sensores' => count($request->sensores),
+                'resultados' => $resultados
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lote de sensores atualizado com sucesso',
+                'sensores_atualizados' => count($request->sensores),
+                'resultados' => $resultados,
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro Arduino ao atualizar lote: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
             ], 500);
         }
     }
