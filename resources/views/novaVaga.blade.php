@@ -441,7 +441,11 @@
 
 (async function () {
     // === VARIÁVEIS GERAIS ===
-    const imageUrl = @json(asset('storage/' . $projeto->caminhoPlantaEstacionamento));
+    // Antes (possível duplicação de "storage/"):
+    // const imageUrl = @json(asset('storage/' . $projeto->caminhoPlantaEstacionamento));
+
+    // Alterar para usar o caminho público fornecido pelo Controller:
+    const imageUrl = @json(asset($caminhoPublico));
     const viewer = document.getElementById('viewer');
     const gridOverlay = document.getElementById('grid-overlay');
     const selectionRect = document.getElementById('selection-rect');
@@ -1117,10 +1121,6 @@
             idoso: 'user-friends',
             deficiente: 'wheelchair'
         };
-        return icons[tipo] || 'square';
-    }
-
-    buildTiposToolbar();
 
     // Controles
     document.getElementById('btnLimpar').addEventListener('click', () => {
