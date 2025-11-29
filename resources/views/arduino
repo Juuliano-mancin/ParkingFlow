@@ -1,0 +1,204 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include "HX711.h"
+
+// ============================================================================
+// CONFIGURAÇÕES DO WI-FI
+// ============================================================================
+const char* ssid = "Fatec24GHz";           // 🔹 altere para sua rede Wi-Fi
+const char* password = "fatecitapira";      // 🔹 altere para sua senha Wi-Fi
+
+// ============================================================================
+// CONFIGURAÇÃO DO SERVIDOR (LARAVEL)
+// ============================================================================
+const char* apiBaseURL = "http://10.0.2.45:8000/api/arduino";  // seu IP + rota base
+
+// ============================================================================
+// CONFIGURAÇÃO DOS SENSORES
+// ============================================================================
+// Mapeamento dos pinos do ESP32 -> HX711
+const int numSensors = 2;  // AUMENTADO PARA 2 SENSORES
+const int DT_PINS[numSensors] = {4, 18};  // pino DT de cada HX711 (ADICIONE O PINO DO NOVO SENSOR)
+const int SCK_PINS[numSensors] = {5, 19}; // pino SCK de cada HX711 (ADICIONE O PINO DO NOVO SENSOR)
+int sensorIDs[numSensors] = {1, 2};        // IDs dos sensores (DEFINA O ID NO BANCO PARA O 2º SENSOR)
+
+
+HX711 scales[numSensors];
+float calibration_factor = -100000.0;   // ajuste conforme seu sensor
+bool lastStatus[numSensors];             // último status enviado (para evitar redundância)
+
+// ============================================================================
+// FUNÇÃO: Conectar ao Wi-Fi
+// ============================================================================
+void connectWiFi() {
+  Serial.println("🔌 Conectando ao Wi-Fi...");
+  WiFi.begin(ssid, password);
+
+  int attempt = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+    attempt++;
+    if (attempt > 15) {
+      Serial.println("\n⚠️ Falha ao conectar. Reiniciando...");
+      ESP.restart();
+    }
+  }
+
+  Serial.println("\n✅ Wi-Fi conectado com sucesso!");
+  Serial.print("Endereço IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+// ============================================================================
+// FUNÇÃO: Inicializar Sensores
+// ============================================================================
+void setupScales() {
+  for (int i = 0; i < numSensors; i++) {
+    scales[i].begin(DT_PINS[i], SCK_PINS[i]);
+    scales[i].set_scale(calibration_factor);
+    scales[i].tare(); // zera o peso inicial
+    lastStatus[i] = false;
+  }
+  Serial.println("⚙️ Sensores HX711 inicializados!");
+}
+
+// ============================================================================
+// FUNÇÃO: Atualizar status de um sensor individual
+// ============================================================================
+void updateSensorStatus(int id, bool status) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi desconectado — não foi possível enviar dados.");
+    return;
+  }
+
+  HTTPClient http;
+  String url = String(apiBaseURL) + "/sensores/" + String(id) + "/status";
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<200> doc;
+  doc["statusManual"] = status;
+
+  String requestBody;
+  serializeJson(doc, requestBody);
+
+  int httpCode = http.POST(requestBody);
+  if (httpCode > 0) {
+    Serial.printf("📤 Sensor %d -> Enviado com sucesso (%d)\n", id, httpCode);
+    Serial.println(http.getString());
+  } else {
+    Serial.printf("❌ Falha ao enviar sensor %d. Erro: %d\n", id, httpCode);
+  }
+
+  http.end();
+}
+
+// ============================================================================
+// FUNÇÃO: Enviar todos os sensores de uma vez (batch)
+// ============================================================================
+void updateAllSensorsBatch() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  String url = String(apiBaseURL) + "/sensores/batch-update";
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<512> doc;
+  JsonArray sensores = doc.createNestedArray("sensores");
+
+  for (int i = 0; i < numSensors; i++) {
+    JsonObject sensor = sensores.createNestedObject();
+    sensor["id"] = sensorIDs[i];
+    sensor["statusManual"] = lastStatus[i];
+  }
+
+  String requestBody;
+  serializeJson(doc, requestBody);
+
+  int httpCode = http.POST(requestBody);
+  if (httpCode > 0) {
+    Serial.printf("📦 Atualização em lote enviada (%d)\n", httpCode);
+    Serial.println(http.getString());
+  } else {
+    Serial.println("❌ Falha ao enviar lote de sensores.");
+  }
+
+  http.end();
+}
+
+// ============================================================================
+// FUNÇÃO: Verificar status da API
+// ============================================================================
+void checkAPIStatus() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = String(apiBaseURL) + "/status";
+    Serial.print("🔍 Verificando API: ");
+    Serial.println(url);
+
+    http.begin(url);
+    int httpCode = http.GET();
+
+    if (httpCode > 0) {
+      String response = http.getString();
+      Serial.println("✅ API Online: " + response);
+    } else {
+      Serial.print("❌ API Offline - Código: ");
+      Serial.println(httpCode);
+    }
+
+    http.end();
+  } else {
+    Serial.println("⚠️ WiFi não conectado - não foi possível verificar API");
+  }
+}
+
+// ============================================================================
+// FUNÇÃO: Ler sensores e enviar atualizações se houver mudança
+// ============================================================================
+void readAndUpdateSensors() {
+  bool hasChanges = false;
+
+  for (int i = 0; i < numSensors; i++) {
+    float weight = scales[i].get_units(10); // média de 10 leituras
+    bool status = (weight > 0.4);           // define se há carro na vaga
+
+    if (status != lastStatus[i]) {
+      lastStatus[i] = status;
+      hasChanges = true;
+      Serial.printf("🚗 Sensor %d mudou -> %s\n", sensorIDs[i], status ? "OCUPADO" : "LIVRE");
+      updateSensorStatus(sensorIDs[i], status);
+    }
+  }
+
+  if (hasChanges) {
+    updateAllSensorsBatch(); // opcional: envia tudo junto
+  }
+}
+
+// ============================================================================
+// SETUP
+// ============================================================================
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  connectWiFi();
+  setupScales();
+  checkAPIStatus();
+}
+
+// ============================================================================
+// LOOP PRINCIPAL
+// ============================================================================
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    connectWiFi(); // tenta reconectar se cair
+  }
+
+  readAndUpdateSensors(); // lê sensores e envia dados
+  delay(5000); // intervalo de 5s entre leituras
+}

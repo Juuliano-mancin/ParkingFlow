@@ -67,7 +67,11 @@
 <td class="px-5 py-4 text-center">
 <div class="d-flex flex-column align-items-center">
 <span class="display-6 mb-2">🚗</span>
-@php $initialCarro = (isset($freeCounts[$nomeSetor]['carro']) ? $freeCounts[$nomeSetor]['carro'] : $totalCarro); @endphp
+@php
+    // Show only free counts on screen. If freeCounts is unavailable yet, show a neutral placeholder (—)
+    // We keep data-total attribute for the JS that computes free = total - occupied
+    $initialCarro = (isset($freeCounts[$nomeSetor]['carro']) ? $freeCounts[$nomeSetor]['carro'] : '');
+@endphp
 <div class="h2 fw-bold text-dark total-count" data-tipo="carro" data-setor="{{ $nomeSetor }}" data-total="{{ $totalCarro }}">{{ $initialCarro }}</div>
 <!-- indicador pequeno removido; o número grande mostra vagas livres -->
 <div class="text-muted">VAGAS CARRO</div>
@@ -78,7 +82,7 @@
 <td class="px-5 py-4 text-center">
 <div class="d-flex flex-column align-items-center">
 <span class="display-6 mb-2">🏍️</span>
-@php $initialMoto = (isset($freeCounts[$nomeSetor]['moto']) ? $freeCounts[$nomeSetor]['moto'] : $totalMoto); @endphp
+@php $initialMoto = (isset($freeCounts[$nomeSetor]['moto']) ? $freeCounts[$nomeSetor]['moto'] : ' '); @endphp
 <div class="h2 fw-bold text-dark total-count" data-tipo="moto" data-setor="{{ $nomeSetor }}" data-total="{{ $totalMoto }}">{{ $initialMoto }}</div>
 <!-- indicador pequeno removido; o número grande mostra vagas livres -->
 <div class="text-muted">VAGAS MOTO</div>
@@ -89,7 +93,7 @@
 <td class="px-5 py-4 text-center">
 <div class="d-flex flex-column align-items-center">
 <span class="display-6 mb-2">♿</span>
-@php $initialDeficiente = (isset($freeCounts[$nomeSetor]['deficiente']) ? $freeCounts[$nomeSetor]['deficiente'] : $totalDeficiente); @endphp
+@php $initialDeficiente = (isset($freeCounts[$nomeSetor]['deficiente']) ? $freeCounts[$nomeSetor]['deficiente'] : ' '); @endphp
 <div class="h2 fw-bold text-dark total-count" data-tipo="deficiente" data-setor="{{ $nomeSetor }}" data-total="{{ $totalDeficiente }}">{{ $initialDeficiente }}</div>
 <!-- indicador pequeno removido; o número grande mostra vagas livres -->
 <div class="text-muted">VAGAS PREFERENCIAIS</div>
@@ -100,7 +104,7 @@
 <td class="px-5 py-4 text-center">
 <div class="d-flex flex-column align-items-center">
 <span class="display-6 mb-2">👴</span>
-@php $initialIdoso = (isset($freeCounts[$nomeSetor]['idoso']) ? $freeCounts[$nomeSetor]['idoso'] : $totalIdoso); @endphp
+@php $initialIdoso = (isset($freeCounts[$nomeSetor]['idoso']) ? $freeCounts[$nomeSetor]['idoso'] : ' '); @endphp
 <div class="h2 fw-bold text-dark total-count" data-tipo="idoso" data-setor="{{ $nomeSetor }}" data-total="{{ $totalIdoso }}">{{ $initialIdoso }}</div>
 <!-- indicador pequeno removido; o número grande mostra vagas livres -->
 <div class="text-muted">VAGAS IDOSOS</div>
@@ -156,81 +160,34 @@ function updateTime() {
  
 // Função para buscar dados atualizados via API
 
-function atualizarDados() {
-
+// Simplified updater: only update the time and counters to avoid replacing the whole table
+// which can cause visual flicker. Keep updates imperceptible by using subtle transitions.
+async function atualizarDados() {
     const indicator = document.getElementById('update-indicator');
+    if (indicator) indicator.style.opacity = '1';
 
-    if (indicator) {
+    // Update the displayed time immediately
+    updateTime();
 
-        indicator.style.opacity = '1';
-
+    // Update counters from APIs (no DOM replacement)
+    try {
+        await fetchSensorStatus();
+    } catch (err) {
+        console.error('Erro ao atualizar contadores:', err);
     }
 
-    // Faz requisição para a mesma rota para obter dados atualizados
-
-    fetch('{{ route('painel.disponibilidade') }}?projeto={{ request('projeto') }}')
-
-        .then(response => response.text())
-
-        .then(html => {
-
-            // Cria um elemento temporário para parse do HTML
-
-            const tempDiv = document.createElement('div');
-
-            tempDiv.innerHTML = html;
-
-            // Encontra a tabela no HTML retornado
-
-            const novaTabelaContainer = tempDiv.querySelector('#tabela-container');
-
-            if (novaTabelaContainer) {
-
-                // Atualiza apenas o conteúdo da tabela de forma instantânea
-
-                document.getElementById('tabela-container').innerHTML = novaTabelaContainer.innerHTML;
-
-            }
-
-            // Atualiza o tempo
-            updateTime();
-
-            // Atualiza os contadores de sensores por setor após o HTML ser atualizado
-            fetchSensorStatus();
-
-            // Esconde o indicador após atualização
-
-            if (indicator) {
-
-                setTimeout(() => {
-
-                    indicator.style.opacity = '0';
-
-                }, 1000);
-
-            }
-
-        })
-
-        .catch(error => {
-
-            console.error('Erro ao atualizar dados:', error);
-
-            // Esconde o indicador em caso de erro
-
-            if (indicator) {
-
-                indicator.style.opacity = '0';
-
-            }
-
-        });
-
+    // Small fade-out for the 'updating' indicator
+    if (indicator) {
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+        }, 450);
+    }
 }
  
 // Atualiza a cada 2 segundos
 
-setInterval(atualizarDados, 2000);
+// Keep frequent updates but smoother: every 2s
+setInterval(atualizarDados, 6000);
  
 // Inicializa o tempo
 
@@ -278,7 +235,7 @@ async function fetchSensorStatus(){
 
         // small indicators removed — the main counters (.total-count) will show vagas livres
 
-        // Update the large total counters to show number of free spots (free = total - occupied)
+        // Update the large counters to show number of free spots (free = total - occupied)
         document.querySelectorAll('.total-count').forEach(el => {
             const setorRaw = el.dataset.setor || '';
             const setor = String(setorRaw).trim().toLowerCase();
@@ -288,7 +245,17 @@ async function fetchSensorStatus(){
             const occupiedCount = mapa[setor] && mapa[setor][tipo] ? mapa[setor][tipo] : 0;
             const free = Math.max(0, total - occupiedCount);
 
-            el.textContent = `${free}`;
+            // animate subtle change
+            const previous = el.textContent;
+            // Only update the DOM if value changed (prevents reflows)
+            if (String(previous) !== String(free)) {
+                // transition class for a quick scale effect
+                el.classList.add('count-updated');
+                // smooth swap without clearing layout
+                el.textContent = `${free}`;
+                // remove the class after the CSS animation
+                setTimeout(() => el.classList.remove('count-updated'), 350);
+            }
             // style accordingly
             if (free > 0) {
                 el.style.color = '#28a745';
@@ -406,6 +373,29 @@ body {
 
     box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
 
+}
+
+/* Smooth transitions for counter updates */
+.total-count{
+    transition: color 200ms ease, transform 220ms ease, opacity 180ms ease;
+    will-change: transform, color, opacity;
+}
+
+.total-count.count-updated{
+    transform: scale(1.06);
+    opacity: 0.95;
+}
+
+/* subtle update indicator */
+#update-indicator{
+    transition: opacity 320ms ease;
+    opacity: 0; /* hidden by default; toggled to visible while updating */
+}
+
+/* placeholder dash for when initial free count is unavailable */
+.total-count:empty::before{
+    /* keep placeholder styling consistent */
+    color: #6c757d;
 }
  
 .form-select option {
