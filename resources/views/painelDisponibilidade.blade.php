@@ -1,66 +1,451 @@
 @extends('layouts.app')
-
+ 
 @section('content')
-<div class="container text-center py-4">
-
-    <h1 class="mb-4">🅿️ Painel de Disponibilidade</h1>
-
+<div class="container-fluid py-5">
+ 
+    <h1 class="mb-4 text-center text-dark">🅿️ Painel de Disponibilidade</h1>
+ 
     {{-- Dropdown de seleção de estacionamento --}}
-    <form method="GET" action="{{ route('painel.disponibilidade') }}" class="mb-4">
-        <select name="projeto" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-            <option value="">Selecione o estacionamento</option>
+<form method="GET" action="{{ route('painel.disponibilidade') }}" class="mb-5 text-center">
+<select name="projeto" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+<option value="">Selecione o estacionamento</option>
+
             @foreach($projetos as $projeto)
-                <option value="{{ $projeto->idProjeto }}" 
+<option value="{{ $projeto->idProjeto }}" 
+
                     {{ request('projeto') == $projeto->idProjeto ? 'selected' : '' }}>
+
                     {{ $projeto->nomeProjeto }}
-                </option>
+</option>
+
             @endforeach
-        </select>
-    </form>
+</select>
+</form>
+ 
+    {{-- Container da tabela para atualização parcial --}}
+<div id="tabela-container">
 
-    {{-- Exibição dos setores --}}
-    @if($setores->count() > 0)
-        <div class="table-responsive">
-            <table class="table table-dark table-bordered align-middle">
-                <thead>
-                    <tr>
-                        <th>Setor</th>
-                        <th>🚗 Carros</th>
-                        <th>🏍️ Motos</th>
-                        <th>♿ Deficientes</th>
-                        <th>👴 Idosos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php
-                        // Agrupa por nome do setor e soma as vagas
-                        $setoresAgrupados = $setores->groupBy('nomeSetor');
-                    @endphp
-                    
-                    @foreach($setoresAgrupados as $nomeSetor => $grupo)
+        @if($setores->count() > 0)
+<div class="table-responsive">
+<table class="table table-borderless align-middle mb-0">
+<tbody>
+
                         @php
-                            $totalCarro = $grupo->sum('vagas_carro');
-                            $totalMoto = $grupo->sum('vagas_moto');
-                            $totalDeficiente = $grupo->sum('vagas_deficiente');
-                            $totalIdoso = $grupo->sum('vagas_idoso');
-                        @endphp
-                        <tr>
-                            <td><strong>{{ $nomeSetor }}</strong></td>
-                            <td>{{ $totalCarro }}</td>
-                            <td>{{ $totalMoto }}</td>
-                            <td>{{ $totalDeficiente }}</td>
-                            <td>{{ $totalIdoso }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
 
-        <div class="mt-4 text-end">
-            <h5>🕒 Atualizado às {{ now()->format('H:i:s') }}</h5>
-        </div>
-    @else
-        <p class="text-muted">Selecione um estacionamento para visualizar os setores.</p>
-    @endif
+                            // Agrupa por nome do setor e soma as vagas
+
+                            $setoresAgrupados = $setores->groupBy('nomeSetor');
+
+                        @endphp
+
+                        @foreach($setoresAgrupados as $nomeSetor => $grupo)
+
+                            @php
+
+                                $totalCarro = $grupo->sum('vagas_carro');
+
+                                $totalMoto = $grupo->sum('vagas_moto');
+
+                                $totalDeficiente = $grupo->sum('vagas_deficiente');
+
+                                $totalIdoso = $grupo->sum('vagas_idoso');
+
+                            @endphp
+<tr class="setor-row" data-nome-setor="{{ $nomeSetor }}" data-id-setor="{{ $grupo->first()->idSetor ?? '' }}">
+
+                                {{-- Setor --}}
+<td class="px-5 py-4">
+<div class="d-flex align-items-center">
+<div>
+<div class="h4 mb-1 fw-bold text-uppercase text-dark">{{ $nomeSetor }}</div>
+<small class="text-muted">SETOR</small>
 </div>
+</div>
+</td>
+ 
+                                {{-- Vagas Carro --}}
+<td class="px-5 py-4 text-center">
+<div class="d-flex flex-column align-items-center">
+<span class="display-6 mb-2">🚗</span>
+@php $initialCarro = (isset($freeCounts[$nomeSetor]['carro']) ? $freeCounts[$nomeSetor]['carro'] : $totalCarro); @endphp
+<div class="h2 fw-bold text-dark total-count" data-tipo="carro" data-setor="{{ $nomeSetor }}" data-total="{{ $totalCarro }}">{{ $initialCarro }}</div>
+<!-- indicador pequeno removido; o número grande mostra vagas livres -->
+<div class="text-muted">VAGAS CARRO</div>
+</div>
+</td>
+ 
+                                {{-- Vagas Moto --}}
+<td class="px-5 py-4 text-center">
+<div class="d-flex flex-column align-items-center">
+<span class="display-6 mb-2">🏍️</span>
+@php $initialMoto = (isset($freeCounts[$nomeSetor]['moto']) ? $freeCounts[$nomeSetor]['moto'] : $totalMoto); @endphp
+<div class="h2 fw-bold text-dark total-count" data-tipo="moto" data-setor="{{ $nomeSetor }}" data-total="{{ $totalMoto }}">{{ $initialMoto }}</div>
+<!-- indicador pequeno removido; o número grande mostra vagas livres -->
+<div class="text-muted">VAGAS MOTO</div>
+</div>
+</td>
+ 
+                                {{-- Vagas Preferenciais --}}
+<td class="px-5 py-4 text-center">
+<div class="d-flex flex-column align-items-center">
+<span class="display-6 mb-2">♿</span>
+@php $initialDeficiente = (isset($freeCounts[$nomeSetor]['deficiente']) ? $freeCounts[$nomeSetor]['deficiente'] : $totalDeficiente); @endphp
+<div class="h2 fw-bold text-dark total-count" data-tipo="deficiente" data-setor="{{ $nomeSetor }}" data-total="{{ $totalDeficiente }}">{{ $initialDeficiente }}</div>
+<!-- indicador pequeno removido; o número grande mostra vagas livres -->
+<div class="text-muted">VAGAS PREFERENCIAIS</div>
+</div>
+</td>
+ 
+                                {{-- Vagas Idosos --}}
+<td class="px-5 py-4 text-center">
+<div class="d-flex flex-column align-items-center">
+<span class="display-6 mb-2">👴</span>
+@php $initialIdoso = (isset($freeCounts[$nomeSetor]['idoso']) ? $freeCounts[$nomeSetor]['idoso'] : $totalIdoso); @endphp
+<div class="h2 fw-bold text-dark total-count" data-tipo="idoso" data-setor="{{ $nomeSetor }}" data-total="{{ $totalIdoso }}">{{ $initialIdoso }}</div>
+<!-- indicador pequeno removido; o número grande mostra vagas livres -->
+<div class="text-muted">VAGAS IDOSOS</div>
+</div>
+</td>
+</tr>
+
+                            {{-- Linha separadora --}}
+
+                            @if(!$loop->last)
+<tr>
+<td colspan="5" class="px-0">
+<div class="border-bottom border-light"></div>
+</td>
+</tr>
+
+                            @endif
+
+                        @endforeach
+</tbody>
+</table>
+</div>
+ 
+            <div class="mt-5 text-center">
+<h5 class="text-muted">🕒 Atualizado às <span id="current-time" class="text-dark">{{ now()->format('H:i') }}</span></h5>
+<small class="text-muted" id="update-indicator">● Atualizando...</small>
+</div>
+
+        @else
+<p class="text-muted text-center">Selecione um estacionamento para visualizar os setores.</p>
+
+        @endif
+</div>
+ 
+</div>
+ 
+{{-- Script para auto-atualização --}}
+<script>
+
+function updateTime() {
+
+    const now = new Date();
+
+    const hours = now.getHours().toString().padStart(2, '0');
+
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+
+    const timeString = `${hours}:${minutes}`;
+
+    document.getElementById('current-time').textContent = timeString;
+
+}
+ 
+// Função para buscar dados atualizados via API
+
+function atualizarDados() {
+
+    const indicator = document.getElementById('update-indicator');
+
+    if (indicator) {
+
+        indicator.style.opacity = '1';
+
+    }
+
+    // Faz requisição para a mesma rota para obter dados atualizados
+
+    fetch('{{ route('painel.disponibilidade') }}?projeto={{ request('projeto') }}')
+
+        .then(response => response.text())
+
+        .then(html => {
+
+            // Cria um elemento temporário para parse do HTML
+
+            const tempDiv = document.createElement('div');
+
+            tempDiv.innerHTML = html;
+
+            // Encontra a tabela no HTML retornado
+
+            const novaTabelaContainer = tempDiv.querySelector('#tabela-container');
+
+            if (novaTabelaContainer) {
+
+                // Atualiza apenas o conteúdo da tabela de forma instantânea
+
+                document.getElementById('tabela-container').innerHTML = novaTabelaContainer.innerHTML;
+
+            }
+
+            // Atualiza o tempo
+            updateTime();
+
+            // Atualiza os contadores de sensores por setor após o HTML ser atualizado
+            fetchSensorStatus();
+
+            // Esconde o indicador após atualização
+
+            if (indicator) {
+
+                setTimeout(() => {
+
+                    indicator.style.opacity = '0';
+
+                }, 1000);
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error('Erro ao atualizar dados:', error);
+
+            // Esconde o indicador em caso de erro
+
+            if (indicator) {
+
+                indicator.style.opacity = '0';
+
+            }
+
+        });
+
+}
+ 
+// Atualiza a cada 2 segundos
+
+setInterval(atualizarDados, 2000);
+ 
+// Inicializa o tempo
+
+updateTime();
+
+// ===== Funções para consultar sensores e vagas-inteligentes e atualizar contadores =====
+
+async function fetchSensorStatus(){
+    try{
+        // fetch both endpoints in parallel
+        const [sensoresRes, vagasIntRes] = await Promise.all([
+            fetch('/api/sensores'),
+            fetch('/api/vagas-inteligentes')
+        ]);
+
+        const sensores = sensoresRes.ok ? await sensoresRes.json() : [];
+        const vagasInt = vagasIntRes.ok ? await vagasIntRes.json() : [];
+
+        // Build a map: setor -> tipo -> occupiedCount
+        const mapa = {};
+
+        vagasInt.forEach(item => {
+            const vaga = item.vaga || {};
+            const setor = item.setor || (vaga && vaga.setor) || null;
+            const sensor = item.sensor || {};
+
+            if(!setor || !vaga) return;
+
+            const nomeSetorRaw = setor.nomeSetor || setor.nome || '';
+            const nomeSetor = String(nomeSetorRaw).trim().toLowerCase();
+            const tipo = String((vaga.tipoVaga || vaga.tipo || 'carro')).trim().toLowerCase();
+
+            if(!mapa[nomeSetor]) mapa[nomeSetor] = {carro:0,moto:0,deficiente:0,idoso:0};
+
+            // Determine if sensor is occupied. Try multiple possible fields
+            const occupied = sensor.hasOwnProperty('statusManual') ? !!sensor.statusManual
+                : sensor.hasOwnProperty('status') ? !!sensor.status
+                : sensor.hasOwnProperty('ocupado') ? !!sensor.ocupado : false;
+
+            if(occupied){
+                if(!mapa[nomeSetor][tipo]) mapa[nomeSetor][tipo] = 0; // safety
+                mapa[nomeSetor][tipo]++;
+            }
+        });
+
+        // small indicators removed — the main counters (.total-count) will show vagas livres
+
+        // Update the large total counters to show number of free spots (free = total - occupied)
+        document.querySelectorAll('.total-count').forEach(el => {
+            const setorRaw = el.dataset.setor || '';
+            const setor = String(setorRaw).trim().toLowerCase();
+            const tipo = String(el.dataset.tipo || '').trim().toLowerCase();
+            const totalAttr = el.dataset.total;
+            const total = Number.isFinite(+totalAttr) ? parseInt(totalAttr, 10) : 0;
+            const occupiedCount = mapa[setor] && mapa[setor][tipo] ? mapa[setor][tipo] : 0;
+            const free = Math.max(0, total - occupiedCount);
+
+            el.textContent = `${free}`;
+            // style accordingly
+            if (free > 0) {
+                el.style.color = '#28a745';
+                el.style.fontWeight = '700';
+            } else {
+                el.style.color = '#6c757d';
+                el.style.fontWeight = '500';
+            }
+        });
+
+    }catch(err){
+        console.error('Erro ao carregar sensores/vagas-inteligentes:', err);
+    }
+}
+
+// Run once on initial load
+fetchSensorStatus();
+</script>
+ 
+<style>
+
+body {
+
+    background: white;
+
+    min-height: 100vh;
+
+    margin: 0;
+
+    padding: 0;
+
+}
+ 
+.table {
+
+    background: transparent;
+
+    font-size: 1.1rem;
+
+}
+ 
+.setor-row {
+
+    background: rgba(0, 0, 0, 0.02);
+
+    border-radius: 20px;
+
+    margin-bottom: 1rem;
+
+    border: 1px solid rgba(0, 0, 0, 0.05);
+
+}
+ 
+.setor-row:hover {
+
+    background: rgba(0, 0, 0, 0.05);
+
+}
+ 
+.table-responsive {
+
+    border-radius: 25px;
+
+    padding: 1rem;
+
+}
+ 
+.container-fluid {
+
+    max-width: 1800px;
+
+}
+ 
+.display-6 {
+
+    font-size: 3rem;
+
+}
+ 
+.h2 {
+
+    font-size: 3.5rem;
+
+}
+ 
+.h4 {
+
+    font-size: 2rem;
+
+}
+ 
+.form-select {
+
+    background: white;
+
+    border: 2px solid #e9ecef;
+
+    color: #495057;
+
+    border-radius: 10px;
+
+    padding: 0.75rem 1.5rem;
+
+    font-size: 1.1rem;
+
+}
+ 
+.form-select:focus {
+
+    background: white;
+
+    border-color: #007bff;
+
+    color: #495057;
+
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+
+}
+ 
+.form-select option {
+
+    background: white;
+
+    color: #495057;
+
+}
+ 
+.border-light {
+
+    border-color: #f8f9fa !important;
+
+}
+ 
+/* Indicador discreto de atualização */
+
+#update-indicator {
+
+    opacity: 0;
+
+    transition: opacity 0.3s ease;
+
+    font-size: 0.8rem;
+
+    color: #6c757d;
+
+}
+ 
+#update-indicator::before {
+
+    content: '●';
+
+    color: #28a745;
+
+    margin-right: 5px;
+
+}
+</style>
+
 @endsection
+ 

@@ -35,14 +35,19 @@ class VagaInteligenteController extends Controller
      */
     public function getVagasInteligentes()
     {
-        $vagasInteligentes = VagaInteligente::with(['vaga', 'sensor'])->get();
-        
+        // eager load vaga -> setor and sensor so the API consumer has full context
+        $vagasInteligentes = VagaInteligente::with(['vaga.setor', 'sensor'])->get();
+
         return response()->json($vagasInteligentes->map(function($vi) {
             return [
                 'idVagaInteligente' => $vi->idVagaInteligente,
                 'idVaga' => $vi->idVaga,
                 'idSensor' => $vi->idSensor,
                 'vaga' => $vi->vaga,
+                'setor' => $vi->vaga && $vi->vaga->setor ? [
+                    'idSetor' => $vi->vaga->setor->idSetor ?? null,
+                    'nomeSetor' => $vi->vaga->setor->nomeSetor ?? null
+                ] : null,
                 'sensor' => $vi->sensor
             ];
         }));
